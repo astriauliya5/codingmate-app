@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tambah Akun Mentor</title>
+  <link rel="stylesheet" href="akun.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Tambah Akun Mentor</h1>
+
+      <button class="btn" onclick="window.history.back()">Back</button>
+
+      <form class="mentor-form" id="akunMentorForm">
+        <section class="form-card">
+          <h3>Informasi Pengguna</h3>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="nama-lengkap">Nama Lengkap</label>
+            <input type="text" id="nama-lengkap" name="nama-lengkap" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="no-telp">No. Telp</label>
+            <input type="text" id="no-telp" name="no-telp" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="alamat">Alamat</label>
+            <input type="text" id="alamat" name="alamat" placeholder="Value" />
+          </div>
+        </section>
+
+        <section class="form-card">
+          <h3>Password</h3>
+
+          <div class="form-group">
+            <label for="new-password">New Password</label>
+            <input type="password" id="new-password" name="new-password" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirm New Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" placeholder="Value" />
+          </div>
+        </section>
+
+        <button type="submit" class="btn-save">Simpan</button>
+      </form>
+    </main>
+  </div>
+</body>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const akunMentorForm = document.getElementById('akunMentorForm');
+
+    if (!akunMentorForm) {
+      console.error('Form akunMentorForm tidak ditemukan.');
+      return;
+    }
+
+    function getValue(id) {
+      const element = document.getElementById(id);
+      return element ? element.value.trim() : '';
+    }
+
+    akunMentorForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const password = getValue('new-password');
+      const confirmPassword = getValue('confirm-password');
+
+      if (password !== confirmPassword) {
+        alert('Password dan konfirmasi password tidak sama.');
+        return;
+      }
+
+      if (password.length < 6) {
+        alert('Password minimal 6 karakter.');
+        return;
+      }
+
+      const akunData = {
+        username: getValue('username'),
+        full_name: getValue('nama-lengkap'),
+        email: getValue('email'),
+        phone: getValue('no-telp'),
+        address: getValue('alamat'),
+        password: password
+      };
+
+      if (!akunData.username || !akunData.full_name || !akunData.email || !akunData.password) {
+        alert('Username, nama lengkap, email, dan password wajib diisi.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/akun', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(akunData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menambahkan akun mentor.');
+          return;
+        }
+
+        alert('Akun mentor berhasil ditambahkan.');
+        window.location.href = '/admin/akun/akun.html';
+      } catch (error) {
+        console.error('CREATE AKUN MENTOR ERROR:', error);
+        alert('Terjadi kesalahan saat menambahkan akun mentor.');
+      }
+    });
+  });
+</script>
+<script src="/assets/js/sidebar.js"></script>
+</html>

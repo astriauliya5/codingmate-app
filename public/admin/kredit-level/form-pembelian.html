@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form Pembelian Kredit</title>
+  <link rel="stylesheet" href="kredit-level.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Form Pembelian</h1>
+
+      <button class="btn" onclick="window.location.href='kredit-level.html'">Back</button>
+
+      <div id="form-container">
+        <div class="invoice-block">
+          <form class="purchase-form">
+            <div class="form-group">
+              <label>Full Name</label>
+              <select class="student-select">
+                <option value="">Value</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Nama Level</label>
+              <select class="level-select">
+                <option value="">Value</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Jenis Kelas</label>
+              <select class="class-type-select">
+                <option value="reguler">Reguler</option>
+                <option value="trial">Trial</option>
+              </select>
+            </div>
+
+            <div class="form-group small-row">
+              <label>Harga Level</label>
+              <div>
+                <input type="text" class="price-input" placeholder="Auto" readonly>
+                <span>IDR</span>
+              </div>
+            </div>
+
+            <div class="form-group small-row">
+              <label>Paid For</label>
+              <div>
+                <input type="number" class="credit-input" placeholder="Kelipatan 4" min="4">
+                <span>Kredit</span>
+              </div>
+            </div>
+
+            <div class="form-group date-row">
+              <label>Tanggal Invoice</label>
+              <div>
+                <input type="date" class="invoice-date">
+              </div>
+            </div>
+          </form>
+
+          <button type="button" class="btn-add">+</button>
+        </div>
+      </div>
+
+      <div class="checkout-wrap">
+        <button type="button" class="btn-checkout" onclick="checkoutInvoice()">Checkout</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="/assets/js/sidebar.js"></script>
+
+  <script>
+    let studentsData = [];
+    let levelsData = [];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadStudents();
+      await loadLevels();
+
+      setupAllInvoiceBlocks();
+    });
+
+    document.addEventListener('click', function (event) {
+      const button = event.target.closest('.btn-add');
+
+      if (!button) return;
+
+      event.preventDefault();
+      addInvoiceBlock();
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function formatRupiah(number) {
+      return 'Rp. ' + Number(number || 0).toLocaleString('id-ID');
+    }
+
+    async function loadStudents() {
+      try {
+        const response = await fetch('/api/students', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data siswa.');
+          return;
+        }
+
+        studentsData = result;
+      } catch (error) {
+        console.error('LOAD STUDENTS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data siswa.');
+      }
+    }
+
+    async function loadLevels() {
+      try {
+        const response = await fetch('/api/levels', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data level.');
+          return;
+        }
+
+        levelsData = result;
+      } catch (error) {
+        console.error('LOAD LEVELS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data level.');
+      }
+    }
+
+    function fillStudentOptions(selectElement) {
+      selectElement.innerHTML = `<option value="">Value</option>`;
+
+      studentsData.forEach(student => {
+        const option = document.createElement('option');
+        option.value = student.id;
+        option.textContent = student.full_name;
+        selectElement.appendChild(option);
+      });
+    }
+
+    function fillLevelOptions(selectElement) {
+      selectElement.innerHTML = `<option value="">Value</option>`;
+
+      levelsData.forEach(level => {
+        const option = document.createElement('option');
+        option.value = level.id;
+        option.dataset.price = level.price;
+        option.textContent = level.level_name;
+        selectElement.appendChild(option);
+      });
+    }
+
+    function setupInvoiceBlock(block) {
+      const studentSelect = block.querySelector('.student-select');
+      const levelSelect = block.querySelector('.level-select');
+      const classTypeSelect = block.querySelector('.class-type-select');
+      const priceInput = block.querySelector('.price-input');
+      const creditInput = block.querySelector('.credit-input');
+      const invoiceDateInput = block.querySelector('.invoice-date');
+
+      fillStudentOptions(studentSelect);
+      fillLevelOptions(levelSelect);
+
+      if (!invoiceDateInput.value) {
+        invoiceDateInput.value = new Date().toISOString().slice(0, 10);
+      }
+
+      function updatePriceAndCredit() {
+        const selectedLevel = levelSelect.options[levelSelect.selectedIndex];
+        const selectedPrice = selectedLevel ? Number(selectedLevel.dataset.price || 0) : 0;
+        const classType = classTypeSelect.value;
+
+        if (classType === 'trial') {
+          priceInput.value = formatRupiah(0);
+          creditInput.value = 1;
+          creditInput.readOnly = true;
+          creditInput.min = 1;
+        } else {
+          priceInput.value = selectedPrice ? formatRupiah(selectedPrice) : '';
+          creditInput.readOnly = false;
+          creditInput.min = 4;
+
+          if (!creditInput.value || Number(creditInput.value) < 4) {
+            creditInput.value = 4;
+          }
+        }
+      }
+
+      levelSelect.addEventListener('change', updatePriceAndCredit);
+      classTypeSelect.addEventListener('change', updatePriceAndCredit);
+
+      creditInput.addEventListener('input', function () {
+        if (classTypeSelect.value === 'trial') {
+          this.value = 1;
+          return;
+        }
+
+        const value = Number(this.value);
+
+        if (value && value % 4 !== 0) {
+          this.setCustomValidity('Paid For reguler harus kelipatan 4.');
+        } else {
+          this.setCustomValidity('');
+        }
+      });
+
+      updatePriceAndCredit();
+    }
+
+    function setupAllInvoiceBlocks() {
+      document.querySelectorAll('.invoice-block').forEach(block => {
+        setupInvoiceBlock(block);
+      });
+    }
+
+    function addInvoiceBlock() {
+      const formContainer = document.getElementById('form-container');
+      const firstBlock = document.querySelector('.invoice-block');
+
+      if (!formContainer || !firstBlock) {
+        console.error('form-container atau invoice-block tidak ditemukan.');
+        return;
+      }
+
+      const newBlock = firstBlock.cloneNode(true);
+
+      newBlock.querySelectorAll('input').forEach(input => {
+        if (input.classList.contains('invoice-date')) {
+          input.value = new Date().toISOString().slice(0, 10);
+        } else if (input.classList.contains('credit-input')) {
+          input.value = '';
+          input.readOnly = false;
+          input.min = 4;
+        } else {
+          input.value = '';
+        }
+      });
+
+      newBlock.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+      });
+
+      const newButton = newBlock.querySelector('.btn-add');
+
+      if (newButton) {
+        newButton.textContent = '+';
+        newButton.type = 'button';
+      }
+
+      formContainer.appendChild(newBlock);
+      setupInvoiceBlock(newBlock);
+    }
+
+    function isBlockEmpty(block) {
+      const studentId = block.querySelector('.student-select').value;
+      const levelId = block.querySelector('.level-select').value;
+
+      return !studentId && !levelId;
+    }
+
+    function isBlockPartiallyFilled(block) {
+      const studentId = block.querySelector('.student-select').value;
+      const levelId = block.querySelector('.level-select').value;
+
+      return (studentId && !levelId) || (!studentId && levelId);
+    }
+
+    async function checkoutInvoice() {
+      const blocks = document.querySelectorAll('.invoice-block');
+      const items = [];
+      let invoiceDate = '';
+
+      for (const block of blocks) {
+        if (isBlockEmpty(block)) {
+          continue;
+        }
+
+        if (isBlockPartiallyFilled(block)) {
+          alert('Kalau mengisi salah satu block, siswa dan level wajib diisi lengkap.');
+          return;
+        }
+
+        const studentId = block.querySelector('.student-select').value;
+        const levelId = block.querySelector('.level-select').value;
+        const classType = block.querySelector('.class-type-select').value;
+        const creditAmount = Number(block.querySelector('.credit-input').value);
+        const dateValue = block.querySelector('.invoice-date').value;
+
+        if (!dateValue) {
+          alert('Tanggal invoice wajib diisi.');
+          return;
+        }
+
+        if (!invoiceDate) {
+          invoiceDate = dateValue;
+        }
+
+        if (classType === 'reguler') {
+          if (creditAmount < 4 || creditAmount % 4 !== 0) {
+            alert('Paid For untuk kelas reguler minimal 4 dan harus kelipatan 4.');
+            return;
+          }
+        }
+
+        if (classType === 'trial' && creditAmount !== 1) {
+          alert('Paid For untuk trial harus 1 kredit.');
+          return;
+        }
+
+        items.push({
+          student_id: Number(studentId),
+          level_id: Number(levelId),
+          class_type: classType,
+          credit_amount: classType === 'trial' ? 1 : creditAmount
+        });
+      }
+
+      if (items.length === 0) {
+        alert('Minimal isi 1 data pembelian kredit.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            invoice_date: invoiceDate,
+            items: items
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal membuat invoice.');
+          return;
+        }
+
+        alert('Invoice berhasil dibuat.');
+
+        localStorage.setItem('lastInvoiceId', result.invoice_id);
+
+        window.location.href = `/admin/kredit-level/invoice.html?id=${result.invoice_id}`;
+      } catch (error) {
+        console.error('CHECKOUT INVOICE ERROR:', error);
+        alert('Terjadi kesalahan saat checkout invoice.');
+      }
+    }
+  </script>
+</body>
+</html>

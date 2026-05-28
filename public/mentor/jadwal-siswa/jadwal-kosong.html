@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jadwal Kosong Mentor</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Jadwal</h1>
+
+      <a class="btn-pengaturan" href="pengaturan-jadwal.html">Pengaturan Jadwal</a>
+
+      <div class="top-bar">
+        <div class="tabs">
+          <a href="jadwal-siswa.html" class="tab">Jadwal Siswa</a>
+          <a href="jadwal-kosong.html" class="tab active">Jadwal Kosong</a>
+          <a href="jadwal-all.html" class="tab">All</a>
+        </div>
+      </div>
+
+      <div class="jadwal-wrapper">
+        <div id="info-popup" class="info-popup">
+          💡 Centang untuk menandai jadwal kosong anda
+        </div>
+
+        <div class="navigation">
+          <button>&larr; Previous Week</button>
+          <input type="text" placeholder="APRIL 2025" disabled />
+          <button>Next Week &rarr;</button>
+        </div>
+
+        <table class="jadwal-table jadwal-kosong-table">
+          <thead>
+            <tr>
+              <th>Senin</th>
+              <th>dd/mm/yyyy</th>
+              <th>Selasa</th>
+              <th>dd/mm/yyyy</th>
+              <th>Rabu</th>
+              <th>dd/mm/yyyy</th>
+              <th>Kamis</th>
+              <th>dd/mm/yyyy</th>
+              <th>Jumat</th>
+              <th>dd/mm/yyyy</th>
+              <th>Sabtu</th>
+              <th>dd/mm/yyyy</th>
+            </tr>
+          </thead>
+
+          <tbody id="jadwal-body"></tbody>
+        </table>
+
+        <div class="save-wrapper">
+          <button type="button" class="btn-save-jadwal" onclick="saveJadwalKosong()">
+            Simpan Perubahan
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const currentMentor = "mentor1";
+
+    const savedEmptyBlocks = [
+      { day: 0, start: "9.30", end: "10.30", mentor: "mentor1" },
+      { day: 1, start: "12.00", end: "13.00", mentor: "mentor1" },
+      { day: 2, start: "12.30", end: "13.00", mentor: "mentor1" },
+      { day: 3, start: "11.30", end: "12.00", mentor: "mentor1" },
+      { day: 4, start: "13.30", end: "14.00", mentor: "mentor1" },
+      { day: 2, start: "17.00", end: "18.00", mentor: "mentor1" }
+    ];
+
+    function generateJadwalRows(startHour, endHour) {
+      const tbody = document.getElementById('jadwal-body');
+      const intervals = ['00', '30'];
+      let rowIndex = 0;
+
+      for (let hour = startHour; hour <= endHour; hour++) {
+        for (let i = 0; i < intervals.length; i++) {
+          const jam = `${hour}.${intervals[i]}`;
+
+          if (hour === endHour && intervals[i] === '30') break;
+
+          const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+          const row = document.createElement('tr');
+          row.classList.add('main-row', rowColorClass);
+
+          for (let day = 0; day < 6; day++) {
+            row.innerHTML += `
+              <td class="time-cell">${jam}</td>
+              <td class="slot default-slot" data-day="${day}" data-time="${jam}">
+                <input 
+                  type="checkbox" 
+                  class="slot-checkbox" 
+                  data-day="${day}" 
+                  data-time="${jam}"
+                >
+              </td>
+            `;
+          }
+
+          tbody.appendChild(row);
+          rowIndex++;
+        }
+      }
+    }
+
+    function timeToMinutes(timeStr) {
+      const [hour, minute] = timeStr.split('.').map(Number);
+      return hour * 60 + minute;
+    }
+
+    function minutesToTime(minutes) {
+      const hour = Math.floor(minutes / 60);
+      const minute = minutes % 60;
+      return `${hour}.${minute === 0 ? '00' : minute}`;
+    }
+
+    function paintSavedBlocks(blocks) {
+      blocks.forEach(block => {
+        const start = timeToMinutes(block.start);
+        const end = timeToMinutes(block.end);
+
+        document
+          .querySelectorAll(`.slot[data-day="${block.day}"]`)
+          .forEach(cell => {
+            const cellTime = timeToMinutes(cell.dataset.time);
+
+            if (cellTime >= start && cellTime < end) {
+              cell.classList.add(`empty-${block.mentor}`);
+
+              const checkbox = cell.querySelector('.slot-checkbox');
+              if (checkbox) checkbox.checked = true;
+            }
+          });
+      });
+    }
+
+    function handleCheckboxChange() {
+      document.querySelectorAll('.slot-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+          const cell = this.closest('.slot');
+
+          if (this.checked) {
+            cell.classList.add(`empty-${currentMentor}`);
+          } else {
+            cell.classList.remove(`empty-${currentMentor}`);
+          }
+        });
+      });
+    }
+
+    function collectCheckedBlocks() {
+      const checkedSlots = [];
+
+      document.querySelectorAll('.slot-checkbox:checked').forEach(checkbox => {
+        checkedSlots.push({
+          day: Number(checkbox.dataset.day),
+          time: checkbox.dataset.time
+        });
+      });
+
+      const grouped = [];
+
+      for (let day = 0; day < 6; day++) {
+        const daySlots = checkedSlots
+          .filter(slot => slot.day === day)
+          .map(slot => timeToMinutes(slot.time))
+          .sort((a, b) => a - b);
+
+        if (daySlots.length === 0) continue;
+
+        let start = daySlots[0];
+        let previous = daySlots[0];
+
+        for (let i = 1; i < daySlots.length; i++) {
+          const current = daySlots[i];
+
+          if (current === previous + 30) {
+            previous = current;
+          } else {
+            grouped.push({
+              day: day,
+              start: minutesToTime(start),
+              end: minutesToTime(previous + 30),
+              mentor: currentMentor
+            });
+
+            start = current;
+            previous = current;
+          }
+        }
+
+        grouped.push({
+          day: day,
+          start: minutesToTime(start),
+          end: minutesToTime(previous + 30),
+          mentor: currentMentor
+        });
+      }
+
+      return grouped;
+    }
+
+    function saveJadwalKosong() {
+      const result = collectCheckedBlocks();
+
+      localStorage.setItem('jadwalKosongMentor', JSON.stringify(result));
+
+      console.log('Data jadwal kosong mentor:', result);
+
+      alert('Perubahan jadwal kosong berhasil disimpan sementara.');
+    }
+
+    function showInfoPopup() {
+      const popup = document.getElementById('info-popup');
+
+      setTimeout(() => {
+        popup.classList.add('show');
+      }, 300);
+
+      setTimeout(() => {
+        popup.classList.remove('show');
+      }, 4500);
+    }
+
+    generateJadwalRows(7, 19);
+    paintSavedBlocks(savedEmptyBlocks);
+    handleCheckboxChange();
+    showInfoPopup();
+  </script>
+
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

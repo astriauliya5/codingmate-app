@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Siswa Mentor</title>
+
+  <link rel="stylesheet" href="data-siswa.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <div class="top-bar">
+        <h1>Data Siswa</h1>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header">
+          <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 Search">
+          </div>
+
+          <select id="tampil" onchange="updateRows()">
+            <option value="20">Tampilkan 20 data</option>
+            <option value="40">Tampilkan 40 data</option>
+            <option value="60">Tampilkan 60 data</option>
+          </select>
+        </div>
+
+        <table id="table-container">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Full Name</th>
+              <th>Nickname</th>
+              <th>Parent Name</th>
+              <th>Born Date</th>
+              <th>Age</th>
+              <th>Tanggal Bergabung</th>
+              <th>Lama Bergabung</th>
+              <th>Kelas Awal</th>
+              <th>Kelas Sekarang</th>
+              <th>No Telp</th>
+              <th>Kota</th>
+              <th>Sekolah</th>
+              <th>Alamat</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+
+          <tbody id="data-table-body">
+            <!-- Data akan di-generate menggunakan JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let allDataSiswa = [];
+      let currentData = [];
+
+      fetch('/data/dummyData.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('dummyData.json tidak ditemukan');
+          }
+
+          return response.json();
+        })
+        .then(dataSiswa => {
+          allDataSiswa = dataSiswa.map((student, index) => ({
+            ...student,
+            originalIndex: index
+          }));
+
+          currentData = allDataSiswa;
+
+          generateTableRows(currentData);
+
+          document.getElementById('search').addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+
+            currentData = allDataSiswa.filter(student =>
+              Object.values(student).some(val =>
+                String(val).toLowerCase().includes(query)
+              )
+            );
+
+            generateTableRows(currentData);
+          });
+
+          document.getElementById('tampil').addEventListener('change', function () {
+            generateTableRows(currentData);
+          });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+
+      function generateTableRows(data) {
+        const tableBody = document.querySelector("#data-table-body");
+        const jumlahTampil = Number(document.getElementById('tampil').value);
+
+        tableBody.innerHTML = '';
+
+        data.slice(0, jumlahTampil).forEach((student, index) => {
+          const row = document.createElement('tr');
+
+          row.innerHTML = `
+            <td>${index + 1}</td>
+
+            <td>
+              <button class="btn-name" onclick="showDetailSiswa(${student.originalIndex})">
+                ${student.fullName}
+              </button>
+            </td>
+
+            <td>${student.nickname}</td>
+            <td>${student.parentName}</td>
+            <td>${student.bornaDate}</td>
+            <td>${student.age}</td>
+            <td>${student.joinedDate}</td>
+            <td>${student.duration}</td>
+            <td>${student.initialClass}</td>
+            <td>${student.currentClass}</td>
+            <td>${student.phone}</td>
+            <td>${student.city}</td>
+            <td>${student.school}</td>
+            <td>${student.address}</td>
+            <td>${student.email}</td>
+          `;
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      window.showDetailSiswa = function (index) {
+        window.location.href = `detail-data-siswa.html?id=${index}`;
+      };
+
+      window.updateRows = function () {
+        generateTableRows(currentData);
+      };
+    });
+  </script>
+
+  <script src="/assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

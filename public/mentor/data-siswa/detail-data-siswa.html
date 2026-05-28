@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Data Siswa</title>
+  <link rel="stylesheet" href="data-siswa.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Detail Data Siswa</h1>
+
+      <button class="btn-back" onclick="window.history.back()">Back</button>
+
+      <div class="detail-layout">
+        <section class="student-card">
+          <div class="photo-box">
+            <span>Foto</span>
+          </div>
+
+          <div id="siswa-detail-container">
+            <!-- Data siswa akan dimuat lewat JavaScript -->
+          </div>
+        </section>
+
+        <aside class="right-panel">
+          <div id="level-record-container">
+            <h2>Level Record</h2>
+
+            <div class="level-tabs">
+              <button class="level-tab active">Basic 1</button>
+              <button class="level-tab">Basic 2</button>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Tanggal Kelas</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>12/12/2024</td>
+                  <td>Memahami instruksi dasar dan mengikuti kelas dengan baik.</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>14/12/2024</td>
+                  <td>Mampu menyelesaikan latihan dengan arahan mentor.</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>16/12/2024</td>
+                  <td>Mulai memahami konsep materi secara mandiri.</td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td>18/12/2024</td>
+                  <td>Aktif bertanya dan menunjukkan perkembangan positif.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="credit-container">
+            <div class="credit-section">
+              <h2>Sisa Kredit</h2>
+
+              <div class="credit-row">
+                <span>Basic 1</span>
+                <strong>:</strong>
+                <b>3</b>
+              </div>
+
+              <div class="credit-row">
+                <span>Basic 2</span>
+                <strong>:</strong>
+                <b>1</b>
+              </div>
+            </div>
+
+            <div class="credit-section">
+              <h2>Tanggal Expired</h2>
+
+              <div class="credit-row">
+                <span>Basic 1</span>
+                <strong>:</strong>
+                <b>3/5/2025</b>
+              </div>
+
+              <div class="credit-row">
+                <span>Basic 2</span>
+                <strong>:</strong>
+                <b>1/6/2025</b>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const params = new URLSearchParams(window.location.search);
+      const siswaIndex = params.get('id');
+
+      fetch('/data/dummyData.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('dummyData.json tidak ditemukan');
+          }
+
+          return response.json();
+        })
+        .then(dataSiswa => {
+          const siswa = dataSiswa[siswaIndex];
+          const container = document.getElementById("siswa-detail-container");
+
+          if (!siswa) {
+            container.innerHTML = `<div>Data siswa tidak ditemukan.</div>`;
+            return;
+          }
+
+          container.innerHTML = `
+            <div class="detail-row">
+              <span>Full Name</span>
+              <p>${siswa.fullName}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Nickname</span>
+              <p>${siswa.nickname}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Parent Name</span>
+              <p>${siswa.parentName}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Born Date</span>
+              <p>${siswa.bornaDate}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Age</span>
+              <p>${siswa.age}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Tgl. Bergabung</span>
+              <p>${siswa.joinedDate}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Lama Bergabung</span>
+              <p>${siswa.duration}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Kelas Awal</span>
+              <p>${siswa.initialClass}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Kelas Sekarang</span>
+              <p>${siswa.currentClass}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>No. Telp</span>
+              <p>${siswa.phone}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Kota</span>
+              <p>${siswa.city}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Sekolah</span>
+              <p>${siswa.school}</p>
+            </div>
+
+            <div class="detail-row">
+              <span>Email</span>
+              <p>${siswa.email}</p>
+            </div>
+          `;
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    });
+  </script>
+
+  <script src="/assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

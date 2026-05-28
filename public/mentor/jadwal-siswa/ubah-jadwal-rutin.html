@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ubah Jadwal Rutin</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+    <h1>Ubah Jadwal Rutin</h1>
+    <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">Back</button>
+
+    <form action="#" class="form-outer">
+
+        <div class="form-group">
+          <label for="siswa">Nama Siswa</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="level">Nama Level</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <!-- Jadwal Lama -->
+        <div class="form-group jadwal-lama">
+        <h4>Jadwal Lama</h4>
+        <label>Total Pertemuan (dalam seminggu):</label>
+        <div class="total-pertemuan-lama">
+            <button type="button" class="btn-pertemuan" data-pertemuan="1" disabled>1 x</button>
+            <button type="button" class="btn-pertemuan active" data-pertemuan="2">2 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="3" disabled>3 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="4" disabled>4 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="5" disabled>5 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="6" disabled>6 x</button>
+        </div>
+        <div class="days">
+            <!-- Jadwal Lama Day Blocks -->
+            <div class="day-block-lama" id="day1">
+              <h4>Day 1</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block-lama" id="day2">
+              <h4>Day 2</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <!-- Repeat for other days -->
+        </div>
+        </div>
+
+        <!-- Jadwal Baru -->
+        <div class="form-group jadwal-baru">
+        <h4>Jadwal Baru</h4>
+        <label>Total Pertemuan (dalam seminggu):</label>
+        <div class="total-pertemuan">
+            <button type="button" class="btn-pertemuan" data-pertemuan="1">1 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="2">2 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="3">3 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="4">4 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="5">5 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="6">6 x</button>
+        </div>
+        <div class="days">
+            <div class="day-block" id="day1">
+              <h4>Day 1</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block" id="day2">
+              <h4>Day 2</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block" id="day3">
+              <h4>Day 3</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block" id="day4">
+              <h4>Day 4</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block" id="day5">
+              <h4>Day 5</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <div class="day-block" id="day6">
+              <h4>Day 6</h4>
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+          </div>
+        </div>
+
+        <div class="validation">
+        <button type="button" class="btn-option">Cancel</button>
+        <button type="submit" class="btn-option">Simpan</button>
+        </div>
+    </form>
+    </main>
+  </div>
+
+  <script>
+    const totalPertemuanButtons = document.querySelectorAll('.btn-pertemuan');
+const dayBlocks = document.querySelectorAll('.day-block');
+
+// Initially hide all day blocks
+dayBlocks.forEach(block => block.classList.add('hidden'));
+
+// Set default for "Jadwal Baru" (2x)
+totalPertemuanButtons[1].classList.add(); // 2x button is active by default
+dayBlocks.forEach((block, index) => {
+  if (index < 2) {
+    block.classList.remove('hidden'); // Show Day 1 and Day 2 for "Jadwal Baru"
+  } else {
+    block.classList.add('hidden'); // Hide the rest
+  }
+});
+
+// Event listener to handle the toggle of day blocks based on Total Pertemuan
+totalPertemuanButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    // Remove the active state from all buttons
+    totalPertemuanButtons.forEach(btn => btn.classList.remove('active'));
+
+    // Add the active state to the clicked button
+    button.classList.add('active');
+    
+    const pertemuanCount = button.getAttribute('data-pertemuan');
+    
+    // Hide or show day blocks based on the selected pertemuan count
+    dayBlocks.forEach((block, index) => {
+      if (index < pertemuanCount) {
+        block.classList.remove('hidden'); // Show the block
+      } else {
+        block.classList.add('hidden'); // Hide the block
+      }
+    });
+  });
+});
+  </script>
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

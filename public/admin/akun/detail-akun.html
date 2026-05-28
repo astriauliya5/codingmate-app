@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Data Akun</title>
+  <link rel="stylesheet" href="akun.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Detail Data Akun</h1>
+
+      <button class="btn" onclick="window.history.back()">Back</button>
+
+      <form class="mentor-form">
+        <section class="form-card">
+          <h3>Informasi Pengguna</h3>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" />
+          </div>
+
+          <div class="form-group">
+            <label for="nama-lengkap">Nama Lengkap</label>
+            <input type="text" id="nama-lengkap" name="nama-lengkap" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="no-telp">No. Telp</label>
+            <input type="text" id="no-telp" name="no-telp" />
+          </div>
+
+          <div class="form-group">
+            <label for="alamat">Alamat</label>
+            <input type="text" id="alamat" name="alamat" />
+          </div>
+
+          <button type="button" class="btn-save" onclick="saveAkunInfo()">
+            Simpan
+          </button>
+        </section>
+
+        <section class="form-card">
+        <h3>Ubah Password</h3>
+
+        <div class="form-group">
+            <label for="new-password">New Password</label>
+            <input type="password" id="new-password" name="new-password" placeholder="Masukkan password baru" />
+        </div>
+
+        <div class="form-group">
+            <label for="confirm-password">Confirm New Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" placeholder="Konfirmasi password baru" />
+        </div>
+
+        <button type="button" class="btn-save" onclick="savePassword()">
+            Simpan
+        </button>
+        </section>
+      </form>
+    </main>
+  </div>
+
+<script>
+  let currentAkunId = null;
+  let currentAkunData = null;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    currentAkunId = params.get('id');
+
+    if (!currentAkunId) {
+      alert('ID akun mentor tidak ditemukan.');
+      window.location.href = '/admin/akun/akun.html';
+      return;
+    }
+
+    fetchDetailAkun(currentAkunId);
+  });
+
+  async function fetchDetailAkun(id) {
+    try {
+      const response = await fetch(`/api/akun/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal mengambil detail akun mentor.');
+        window.location.href = '/admin/akun/data-akun.html';
+        return;
+      }
+
+      currentAkunData = result;
+
+      document.getElementById('username').value = result.username || '';
+      document.getElementById('nama-lengkap').value = result.full_name || '';
+      document.getElementById('email').value = result.email || '';
+      document.getElementById('no-telp').value = result.phone || '';
+      document.getElementById('alamat').value = result.address || '';
+
+    } catch (error) {
+      console.error('GET DETAIL AKUN ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil detail akun mentor.');
+    }
+  }
+
+  async function saveAkunInfo() {
+    if (!currentAkunId) return;
+
+    const akunData = {
+      username: document.getElementById('username').value.trim(),
+      full_name: document.getElementById('nama-lengkap').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('no-telp').value.trim(),
+      address: document.getElementById('alamat').value.trim()
+    };
+
+    if (!akunData.username || !akunData.full_name || !akunData.email) {
+      alert('Username, nama lengkap, dan email wajib diisi.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/akun/${currentAkunId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(akunData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal memperbarui data akun mentor.');
+        return;
+      }
+
+      alert('Informasi akun mentor berhasil diperbarui.');
+      fetchDetailAkun(currentAkunId);
+
+    } catch (error) {
+      console.error('UPDATE AKUN ERROR:', error);
+      alert('Terjadi kesalahan saat memperbarui akun mentor.');
+    }
+  }
+
+//   UBAH PASSWORD
+  async function savePassword() {
+    if (!currentAkunId) return;
+
+    const newPassword = document.getElementById('new-password').value.trim();
+    const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+    if (!newPassword || !confirmPassword) {
+      alert('Password baru dan konfirmasi password wajib diisi.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert('Password baru dan konfirmasi password tidak sama.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert('Password minimal 6 karakter.');
+      return;
+    }
+
+    const akunData = {
+      username: document.getElementById('username').value.trim(),
+      full_name: document.getElementById('nama-lengkap').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('no-telp').value.trim(),
+      address: document.getElementById('alamat').value.trim(),
+      new_password: newPassword
+    };
+
+    try {
+      const response = await fetch(`/api/akun/${currentAkunId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(akunData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal memperbarui password mentor.');
+        return;
+      }
+
+      document.getElementById('new-password').value = '';
+      document.getElementById('confirm-password').value = '';
+
+      alert('Password mentor berhasil diperbarui.');
+
+    } catch (error) {
+      console.error('UPDATE PASSWORD ERROR:', error);
+      alert('Terjadi kesalahan saat memperbarui password mentor.');
+    }
+  }
+
+async function savePassword() {
+  if (!currentAkunId) return;
+
+  const newPassword = document.getElementById('new-password').value.trim();
+  const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+  if (!newPassword || !confirmPassword) {
+    alert('Password baru dan konfirmasi password wajib diisi.');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    alert('Password baru dan konfirmasi password tidak sama.');
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    alert('Password minimal 6 karakter.');
+    return;
+  }
+
+  const akunData = {
+    username: document.getElementById('username').value.trim(),
+    full_name: document.getElementById('nama-lengkap').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    phone: document.getElementById('no-telp').value.trim(),
+    address: document.getElementById('alamat').value.trim(),
+    new_password: newPassword
+  };
+
+  try {
+    const response = await fetch(`/api/akun/${currentAkunId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(akunData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.message || 'Gagal memperbarui password mentor.');
+      return;
+    }
+
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+
+    alert('Password mentor berhasil diperbarui.');
+  } catch (error) {
+    console.error('UPDATE PASSWORD ERROR:', error);
+    alert('Terjadi kesalahan saat memperbarui password mentor.');
+  }
+}
+</script>
+
+  <script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Akun Mentor</title>
+  <link rel="stylesheet" href="akun.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Detail Data Akun</h1>
+
+      <button class="btn" onclick="window.history.back()">Back</button>
+
+      <form class="mentor-form">
+        <section class="form-card">
+          <h3>Informasi Pengguna</h3>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" />
+          </div>
+
+          <div class="form-group">
+            <label for="nama-lengkap">Nama Lengkap</label>
+            <input type="text" id="nama-lengkap" name="nama-lengkap" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="no-telp">No. Telp</label>
+            <input type="text" id="no-telp" name="no-telp" />
+          </div>
+
+          <div class="form-group">
+            <label for="alamat">Alamat</label>
+            <input type="text" id="alamat" name="alamat" />
+          </div>
+
+          <button type="button" class="btn-save" onclick="saveAkunInfo()">
+            Simpan
+          </button>
+        </section>
+
+        <section class="form-card">
+          <h3>Ubah Password</h3>
+
+          <div class="form-group">
+            <label for="old-password">Password Lama</label>
+            <input type="password" id="old-password" name="old-password" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="new-password">New Password</label>
+            <input type="password" id="new-password" name="new-password" placeholder="Value" />
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirm New Password</label>
+            <input type="password" id="confirm-password" name="confirm-password" placeholder="Value" />
+          </div>
+
+          <button type="button" class="btn-save" onclick="savePassword()">
+            Simpan
+          </button>
+        </section>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const storedData = JSON.parse(localStorage.getItem('detailAkunMentorData'));
+
+      const defaultMentorData = {
+        username: 'mentor1',
+        namaLengkap: 'Mentor 1',
+        email: 'mentor1@gmail.com',
+        noTelp: '081234567890',
+        alamat: 'Yogyakarta'
+      };
+
+      const data = storedData || defaultMentorData;
+
+      document.getElementById('username').value = data.username || '';
+      document.getElementById('nama-lengkap').value = data.namaLengkap || '';
+      document.getElementById('email').value = data.email || '';
+      document.getElementById('no-telp').value = data.noTelp || '';
+      document.getElementById('alamat').value = data.alamat || '';
+    });
+
+    function saveAkunInfo() {
+      const updatedData = {
+        username: document.getElementById('username').value,
+        namaLengkap: document.getElementById('nama-lengkap').value,
+        email: document.getElementById('email').value,
+        noTelp: document.getElementById('no-telp').value,
+        alamat: document.getElementById('alamat').value
+      };
+
+      localStorage.setItem('detailAkunMentorData', JSON.stringify(updatedData));
+
+      alert('Informasi akun mentor berhasil disimpan sementara.');
+    }
+
+    function savePassword() {
+      const oldPassword = document.getElementById('old-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        alert('Semua kolom password harus diisi.');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        alert('Password baru dan konfirmasi password tidak sama.');
+        return;
+      }
+
+      alert('Password mentor berhasil diperbarui sementara.');
+    }
+  </script>
+
+  <script src="/assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

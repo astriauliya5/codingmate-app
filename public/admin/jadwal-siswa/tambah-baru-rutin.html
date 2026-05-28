@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tambah Baru Rutin</title>
+  <link rel="stylesheet" href="jadwal-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Tambah Baru Rutin</h1>
+
+      <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">
+        Back
+      </button>
+
+      <form id="routineScheduleForm" action="#" class="form-outer">
+        <div class="form-group">
+          <label for="mentor-name">Nama Mentor</label>
+          <input type="text" id="mentor-name" name="mentor-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="student-name">Nama Siswa</label>
+          <input type="text" id="student-name" name="student-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="level-name">Nama Level</label>
+          <input type="text" id="level-name" name="level-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="class-type-name">Jenis Kelas</label>
+          <input type="text" id="class-type-name" name="class-type-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="sisa-kredit">Sisa Kredit</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label>Total Pertemuan (dalam seminggu):</label>
+
+          <div class="total-pertemuan">
+            <button type="button" class="btn-pertemuan active" data-pertemuan="1">1 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="2">2 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="3">3 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="4">4 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="5">5 x</button>
+            <button type="button" class="btn-pertemuan" data-pertemuan="6">6 x</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Pertemuan:</label>
+
+          <div class="days">
+            <div class="day-block" id="day1">
+              <h4>Day 1</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+
+            <div class="day-block" id="day2">
+              <h4>Day 2</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+
+            <div class="day-block" id="day3">
+              <h4>Day 3</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+
+            <div class="day-block" id="day4">
+              <h4>Day 4</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+
+            <div class="day-block" id="day5">
+              <h4>Day 5</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+
+            <div class="day-block" id="day6">
+              <h4>Day 6</h4>
+
+              <label>Tanggal Mulai</label>
+              <input type="date" class="start-date" />
+
+              <label>Jam Mulai</label>
+              <input type="time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" class="end-time" readonly/>
+            </div>
+          </div>
+        </div>
+
+        <div class="validation">
+          <button type="button" class="btn-option" onclick="window.location.href='pengaturan-jadwal.html'">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn-option">
+            Simpan
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    let scheduleContext = null;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      const totalPertemuanButtons = document.querySelectorAll('.btn-pertemuan');
+      const dayBlocks = document.querySelectorAll('.day-block');
+      const form = document.getElementById('routineScheduleForm');
+
+      scheduleContext = JSON.parse(localStorage.getItem('scheduleContext'));
+
+      if (!scheduleContext) {
+        alert('Data pengaturan jadwal belum dipilih.');
+        window.location.href = 'pengaturan-jadwal.html';
+        return;
+      }
+
+      await loadScheduleContextDetail();
+      
+      setupAutoEndTime();
+
+      setupStartDateValidation();
+
+      dayBlocks.forEach(block => block.classList.add('hidden'));
+      dayBlocks[0].classList.remove('hidden');
+
+      totalPertemuanButtons.forEach(btn => btn.classList.remove('active'));
+      totalPertemuanButtons[0].classList.add('active');
+
+      totalPertemuanButtons.forEach(button => {
+        button.addEventListener('click', function () {
+          totalPertemuanButtons.forEach(btn => btn.classList.remove('active'));
+          button.classList.add('active');
+
+          const pertemuanCount = Number(button.getAttribute('data-pertemuan'));
+
+          dayBlocks.forEach((block, index) => {
+            if (index < pertemuanCount) {
+              block.classList.remove('hidden');
+            } else {
+              block.classList.add('hidden');
+
+              const startDate = block.querySelector('.start-date');
+              const startTime = block.querySelector('.start-time');
+              const endTime = block.querySelector('.end-time');
+
+              if (startDate) startDate.value = '';
+              if (startTime) startTime.value = '';
+              if (endTime) endTime.value = '';
+            }
+          });
+        });
+      });
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        await submitRoutineSchedules();
+      });
+    });
+
+    function getDayOfWeekMondayBased(dateString) {
+      if (!dateString) return null;
+
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+
+      const jsDay = date.getDay();
+
+      return jsDay === 0 ? 6 : jsDay - 1;
+    }
+
+      function setupStartDateValidation() {
+        const dayBlocks = document.querySelectorAll('.day-block');
+
+        dayBlocks.forEach(block => {
+          const startDateInput = block.querySelector('.start-date');
+
+          if (!startDateInput) return;
+
+          startDateInput.addEventListener('change', function () {
+            const day = getDayOfWeekMondayBased(this.value);
+
+            if (day === 6) {
+              alert('Tanggal mulai tidak boleh hari Minggu.');
+              this.value = '';
+            }
+          });
+        });
+      }
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function normalizeTime(timeValue) {
+      if (!timeValue) return '';
+      return timeValue.length === 5 ? `${timeValue}:00` : timeValue;
+    }
+
+    function formatClassType(value) {
+      if (value === 'trial') return 'Trial';
+      return 'Reguler';
+    }
+
+    async function loadScheduleContextDetail() {
+      try {
+        const [studentResponse, mentorResponse, levelsResponse] = await Promise.all([
+          fetch(`/api/students/${scheduleContext.student_id}`, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          }),
+
+          fetch(`/api/akun/${scheduleContext.mentor_id}`, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          }),
+
+          fetch('/api/levels', {
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          })
+        ]);
+
+        const student = await studentResponse.json();
+        const mentor = await mentorResponse.json();
+        const levels = await levelsResponse.json();
+
+        if (!studentResponse.ok) {
+          alert(student.message || 'Data siswa tidak ditemukan.');
+          window.location.href = 'pengaturan-jadwal.html';
+          return;
+        }
+
+        if (!mentorResponse.ok) {
+          alert(mentor.message || 'Data mentor tidak ditemukan.');
+          window.location.href = 'pengaturan-jadwal.html';
+          return;
+        }
+
+        if (!levelsResponse.ok) {
+          alert(levels.message || 'Data level tidak ditemukan.');
+          window.location.href = 'pengaturan-jadwal.html';
+          return;
+        }
+
+        const selectedLevelMaster = levels.find(level => {
+          return Number(level.id) === Number(scheduleContext.level_id);
+        });
+
+        const selectedStudentLevel = (student.levels || []).find(level => {
+          return Number(level.level_id) === Number(scheduleContext.level_id);
+        });
+
+        document.getElementById('mentor-name').value = mentor.full_name || mentor.username || '-';
+        document.getElementById('student-name').value = student.full_name || '-';
+        document.getElementById('level-name').value = selectedLevelMaster ? selectedLevelMaster.level_name : '-';
+        document.getElementById('class-type-name').value = formatClassType(scheduleContext.class_type);
+
+        if (selectedStudentLevel) {
+          document.getElementById('sisa-kredit').value = `${selectedStudentLevel.remaining_credit} kredit`;
+        } else {
+          document.getElementById('sisa-kredit').value = 'Belum ada kredit';
+        }
+      } catch (error) {
+        console.error('LOAD SCHEDULE CONTEXT ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data pengaturan jadwal.');
+      }
+    }
+
+
+    function addOneHour(timeValue) {
+      if (!timeValue) return '';
+
+      const [hour, minute] = timeValue.split(':').map(Number);
+
+      const date = new Date();
+      date.setHours(hour);
+      date.setMinutes(minute);
+      date.setSeconds(0);
+
+      date.setHours(date.getHours() + 1);
+
+      const endHour = String(date.getHours()).padStart(2, '0');
+      const endMinute = String(date.getMinutes()).padStart(2, '0');
+
+      return `${endHour}:${endMinute}`;
+    }
+
+    function setupAutoEndTime() {
+      const dayBlocks = document.querySelectorAll('.day-block');
+
+      dayBlocks.forEach(block => {
+        const startTimeInput = block.querySelector('.start-time');
+        const endTimeInput = block.querySelector('.end-time');
+
+        if (!startTimeInput || !endTimeInput) return;
+
+        startTimeInput.addEventListener('change', function () {
+          endTimeInput.value = addOneHour(this.value);
+        });
+      });
+    }
+
+    async function submitRoutineSchedules() {
+      const dayBlocks = document.querySelectorAll('.day-block');
+      const schedules = [];
+
+      const sisaKreditValue = document.getElementById('sisa-kredit').value;
+
+      if (
+        sisaKreditValue === 'Belum ada kredit' ||
+        sisaKreditValue === '-' ||
+        sisaKreditValue === 'Auto'
+      ) {
+        alert('Siswa belum memiliki kredit untuk level ini. Buat invoice dan ubah status menjadi lunas terlebih dahulu.');
+        return;
+      }
+
+      for (const block of dayBlocks) {
+        if (block.classList.contains('hidden')) continue;
+
+        const startDate = block.querySelector('.start-date')?.value;
+        const startTime = normalizeTime(block.querySelector('.start-time')?.value);
+        const endTime = normalizeTime(block.querySelector('.end-time')?.value);
+
+        if (!startDate || !startTime || !endTime) {
+          alert('Tanggal mulai, jam mulai, dan jam selesai wajib diisi pada setiap pertemuan yang aktif.');
+          return;
+        }
+
+        const dayOfWeek = getDayOfWeekMondayBased(startDate);
+
+        if (dayOfWeek === 6) {
+          alert('Tanggal mulai tidak boleh hari Minggu.');
+          return;
+        }
+
+        if (startTime >= endTime) {
+          alert('Jam mulai harus lebih kecil dari jam selesai.');
+          return;
+        }
+
+        schedules.push({
+          student_id: Number(scheduleContext.student_id),
+          level_id: Number(scheduleContext.level_id),
+          mentor_id: Number(scheduleContext.mentor_id),
+          class_type: scheduleContext.class_type,
+          start_date: startDate,
+          start_time: startTime,
+          end_time: endTime
+        });
+      }
+
+      if (schedules.length === 0) {
+        alert('Minimal isi 1 jadwal rutin.');
+        return;
+      }
+
+      try {
+        for (const schedule of schedules) {
+          const response = await fetch('/api/schedules/routine', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(schedule)
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(result.message || 'Gagal menambahkan jadwal rutin.');
+            return;
+          }
+        }
+
+        alert('Jadwal rutin berhasil ditambahkan.');
+        localStorage.removeItem('scheduleContext');
+        window.location.href = '/admin/jadwal-siswa/jadwal-siswa.html';
+      } catch (error) {
+        console.error('CREATE ROUTINE SCHEDULE ERROR:', error);
+        alert('Terjadi kesalahan saat menambahkan jadwal rutin.');
+      }
+    }
+  </script>
+
+  <script src="../../assets/js/sidebar.js"></script>
+</body>
+</html>

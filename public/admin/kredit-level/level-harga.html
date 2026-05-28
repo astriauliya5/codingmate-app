@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daftar Nama Level dan Harga</title>
+
+  <link rel="stylesheet" href="kredit-level.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content level-page">
+    <h1>Daftar Nama Level dan Harga</h1>
+
+    <button class="btn" onclick="window.history.back()">Back</button>
+
+    <div class="level-layout">
+        <div class="level-table-card">
+        <table class="level-table">
+            <thead>
+            <tr>
+                <th>No.</th>
+                <th>Nama Level</th>
+                <th>Harga</th>
+                <th>Aksi</th>
+            </tr>
+            </thead>
+
+            <tbody id="level-table-body">
+            <!-- Data level digenerate JS -->
+            </tbody>
+        </table>
+        </div>
+
+        <form class="level-form" id="levelForm">
+        <div class="level-form-row">
+            <label for="nama-level">Nama Level</label>
+            <input type="text" id="nama-level" placeholder="Value">
+        </div>
+
+        <div class="level-form-row">
+            <label for="harga-level">Harga Level</label>
+            <input type="text" id="harga-level" placeholder="Rp. 0">
+        </div>
+
+        <div class="level-form-action">
+            <button type="submit" class="btn-submit">Input Level Baru</button>
+        </div>
+        </form>
+    </div>
+    </main>
+  </div>
+
+<script>
+  const tableBody = document.getElementById('level-table-body');
+  const levelForm = document.getElementById('levelForm');
+  const hargaInput = document.getElementById('harga-level');
+  const namaLevelInput = document.getElementById('nama-level');
+
+  function formatRupiah(number) {
+    return 'Rp. ' + Number(number).toLocaleString('id-ID');
+  }
+
+  function getNumberFromRupiah(value) {
+    return Number(String(value).replace(/[^0-9]/g, ''));
+  }
+
+  async function fetchLevels() {
+    try {
+      const response = await fetch('/api/levels', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal mengambil data level.');
+        return;
+      }
+
+      renderLevelTable(result);
+    } catch (error) {
+      console.error('GET LEVELS ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil data level.');
+    }
+  }
+
+  function renderLevelTable(levelData) {
+    tableBody.innerHTML = '';
+
+    levelData.forEach((level, index) => {
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${level.level_name}</td>
+        <td>${formatRupiah(level.price)}</td>
+        <td>
+          <button class="btn-delete" onclick="deleteLevel(${level.id})">✖ Hapus</button>
+        </td>
+      `;
+
+      tableBody.appendChild(row);
+    });
+  }
+
+  async function deleteLevel(id) {
+    const confirmDelete = confirm('Yakin ingin menghapus level ini?');
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/levels/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal menghapus level.');
+        return;
+      }
+
+      alert('Level berhasil dihapus.');
+      fetchLevels();
+    } catch (error) {
+      console.error('DELETE LEVEL ERROR:', error);
+      alert('Terjadi kesalahan saat menghapus level.');
+    }
+  }
+
+  hargaInput.addEventListener('input', function () {
+    const angka = getNumberFromRupiah(this.value);
+
+    if (!angka) {
+      this.value = '';
+      return;
+    }
+
+    this.value = formatRupiah(angka);
+  });
+
+  levelForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+
+    const levelName = namaLevelInput.value.trim();
+    const price = getNumberFromRupiah(hargaInput.value);
+
+    if (!levelName || !price) {
+      alert('Nama level dan harga level harus diisi.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/levels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          level_name: levelName,
+          price: price
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal menambahkan level.');
+        return;
+      }
+
+      alert('Level berhasil ditambahkan.');
+
+      levelForm.reset();
+      fetchLevels();
+    } catch (error) {
+      console.error('CREATE LEVEL ERROR:', error);
+      alert('Terjadi kesalahan saat menambahkan level.');
+    }
+  });
+
+  fetchLevels();
+</script>
+
+<script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

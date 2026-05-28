@@ -1,0 +1,558 @@
+/* MAIN CONTENT */
+.top-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 35px;
+  margin-bottom: 25px;
+}
+
+.btn {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 8px 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn :hover {
+  background-color: #444;
+}
+
+.search-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+  font-size: 14px;
+}
+
+.search-box input {
+  width: 210px;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #ddd;
+}
+
+.search-box select {
+  padding: 2px 8px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 520px;
+  padding-bottom: 12px;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 1350px;
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+}
+
+th {
+  font-weight: normal;
+  padding: 12px 10px;
+  border-top: 1px solid #aaa;
+  border-right: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  background: white;
+}
+
+td {
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+.btn-delete,
+.btn-pdf {
+  border: none;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-delete {
+  background: #e6e6e6;
+  color: #b00000;
+}
+
+.btn-pdf {
+  background: #d9d9d9;
+  color: #333;
+}
+
+.status {
+  border: 1px solid #888;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.status.pending {
+  background: #f3e58b;
+  color: #8a7500;
+}
+
+.status.unpaid {
+  background: #f5b3a8;
+  color: #9a2d20;
+}
+
+.status.paid {
+  background: #a9d18e;
+  color: #2f5e1e;
+}
+
+/* FORM PEMBELIAN */
+#form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.invoice-block {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+  border: 1px solid #777;
+  border-radius: 4px;
+  padding: 20px;
+  box-shadow: none;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+label {
+  font-weight: normal;
+  font-size: 14px;
+}
+
+select,
+input {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  font-size: 14px;
+  background: #f7f7f7;
+}
+
+select {
+  width: 760px;
+}
+
+.small-row input,
+.date-row input {
+  width: 210px;
+}
+
+.small-row div,
+.date-row div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-calendar {
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-add {
+  width: 36px;
+  height: 36px;
+  font-size: 32px;
+  line-height: 20px;
+  font-weight: bold;
+  background: white;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.checkout-wrap {
+  max-width: 850px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30px;
+}
+
+.btn-checkout {
+  background: #222;
+  color: white;
+  width: 240px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-checkout:hover {
+  background: #444;
+}
+
+/* INVOICE */
+/* .invoice-container {
+  max-width: 850px;
+  margin-top: 30px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.invoice-preview {
+  width: 100%;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 20px;
+  background: white;
+  min-height: 360px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.invoice-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 7px 6px;
+  border: 1px solid #ddd;
+  white-space: normal !important;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.invoice-table th {
+  background: #f4c79b;
+  font-weight: bold;
+  border: 1px solid #999;
+}
+
+.invoice-table tbody tr:nth-child(even) {
+  background: #f5caca;
+}
+
+.invoice-table .col-no {
+  width: 8%;
+}
+
+.invoice-table .col-name {
+  width: 28%;
+}
+
+.invoice-table .col-level {
+  width: 18%;
+}
+
+.invoice-table .col-paid {
+  width: 16%;
+}
+
+.invoice-table .col-date {
+  width: 16%;
+}
+
+.invoice-table .col-total {
+  width: 18%;
+}
+
+.grand-total-label {
+  text-align: right;
+  font-weight: bold;
+  background: white !important;
+}
+
+.grand-total {
+  font-weight: bold;
+  background: white !important;
+}
+*/
+
+.invoice-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.invoice-actions .btn {
+  margin: 0;
+}
+
+.invoice-container {
+  max-width: 850px;
+  margin-top: 30px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.invoice-preview {
+  width: 100%;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 20px;
+  background: white;
+  box-sizing: border-box;
+
+  /* ini penting, jangan hidden */
+  overflow: visible !important;
+}
+
+.invoice-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 7px 6px;
+  border: 1px solid #ddd;
+  white-space: normal !important;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.invoice-table th {
+  background: #f4c79b;
+  border: 1px solid #999;
+  font-weight: bold;
+}
+
+.invoice-table tbody tr:nth-child(even) {
+  background: #f5caca;
+}
+
+.payment-info {
+  margin-top: 35px;
+  font-size: 13px;
+}
+
+.bank-box {
+  width: 350px;
+  border: 1px solid #555;
+  padding: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
+}
+
+/* tambahan */
+.pdf-mode {
+  width: 1050px !important;
+  max-width: 1050px !important;
+  min-height: auto !important;
+  overflow: visible !important;
+  box-sizing: border-box;
+}
+
+.pdf-mode .invoice-table {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* =========================
+   LEVEL HARGA PAGE ONLY
+========================= */
+
+.level-page {
+  max-width: calc(100vw - 240px);
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.level-page h1 {
+  max-width: 100%;
+  font-size: 52px;
+  line-height: 1.1;
+  white-space: normal;
+}
+
+.level-page .level-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 405px;
+  gap: 14px;
+  width: 100%;
+  max-width: 900px;
+  align-items: flex-start;
+  box-sizing: border-box;
+}
+
+/* TABLE CARD */
+.level-page .level-table-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 520px;
+  border: 1px solid #555;
+  border-radius: 5px;
+  background: #f4f4f4;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.level-page .level-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.level-page .level-table th {
+  padding: 12px 8px;
+  border-top: none;
+  border-right: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  font-weight: normal;
+  background: #fff;
+  color: #111;
+  white-space: normal;
+}
+
+.level-page .level-table th:last-child {
+  border-right: none;
+}
+
+.level-page .level-table td {
+  padding: 13px 8px;
+  background: #f4f4f4;
+  white-space: normal;
+  word-break: break-word;
+  color: #111;
+}
+
+.level-page .level-table th:nth-child(1),
+.level-page .level-table td:nth-child(1) {
+  width: 14%;
+}
+
+.level-page .level-table th:nth-child(2),
+.level-page .level-table td:nth-child(2) {
+  width: 40%;
+}
+
+.level-page .level-table th:nth-child(3),
+.level-page .level-table td:nth-child(3) {
+  width: 26%;
+}
+
+.level-page .level-table th:nth-child(4),
+.level-page .level-table td:nth-child(4) {
+  width: 20%;
+}
+
+/* DELETE BUTTON */
+.level-page .btn-delete {
+  background: #e6e6e6;
+  color: #b00000;
+  border: none;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.level-page .btn-delete:hover {
+  background: #d0d0d0;
+}
+
+/* FORM LEVEL */
+.level-page .level-form {
+  width: 100%;
+  max-width: none;
+  border: 1px solid #555;
+  border-radius: 5px;
+  background: #f4f4f4;
+  padding: 22px;
+  box-sizing: border-box;
+  box-shadow: none;
+  display: block;
+}
+
+.level-page .level-form-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.level-page .level-form-row label {
+  font-size: 14px;
+  font-weight: normal;
+  color: #222;
+}
+
+.level-page .level-form-row input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #f7f7f7;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.level-page .level-form-row input:focus {
+  background: #fff;
+  border-color: #222;
+}
+
+.level-page .level-form-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 38px;
+}
+
+.level-page .btn-submit {
+  background: #222;
+  color: white;
+  padding: 10px 26px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.level-page .btn-submit:hover {
+  background: #444;
+}

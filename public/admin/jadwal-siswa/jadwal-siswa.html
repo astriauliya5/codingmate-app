@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jadwal Siswa</title>
+  <link rel="stylesheet" href="jadwal-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>    <main class="main-content">
+      <h1>Jadwal</h1>
+      <a class="btn-pengaturan" href="pengaturan-jadwal.html">Pengaturan Jadwal</a>
+      <div class="top-bar">
+        <div class="keterangan">
+          <span><span class="legend mentor1"></span> Mentor 1</span>
+          <span><span class="legend mentor2"></span> Mentor 2</span>
+        </div>
+
+        <div class="tabs">
+          <a href="jadwal-siswa.html" class="tab active">Jadwal Siswa</a>
+          <a href="jadwal-kosong.html" class="tab">Jadwal Kosong</a>
+          <a href="jadwal-all.html" class="tab">All</a>
+        </div>
+      </div>
+      <div class="jadwal-wrapper">
+        <div class="navigation">
+          <button type="button" id="prevWeekBtn">&larr; Previous Week</button>
+          <input type="text" id="weekLabel" placeholder="APRIL 2025" disabled />
+          <button type="button" id="nextWeekBtn">Next Week &rarr;</button>
+        </div>
+
+        <table class="jadwal-table">
+          <thead>
+            <tr>
+              <th>Senin</th>
+              <th class="date-head" data-day="0">dd/mm/yyyy</th>
+
+              <th>Selasa</th>
+              <th class="date-head" data-day="1">dd/mm/yyyy</th>
+
+              <th>Rabu</th>
+              <th class="date-head" data-day="2">dd/mm/yyyy</th>
+
+              <th>Kamis</th>
+              <th class="date-head" data-day="3">dd/mm/yyyy</th>
+
+              <th>Jumat</th>
+              <th class="date-head" data-day="4">dd/mm/yyyy</th>
+
+              <th>Sabtu</th>
+              <th class="date-head" data-day="5">dd/mm/yyyy</th>
+            </tr>
+          </thead>
+          <tbody id="jadwal-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+<script>
+  let currentWeekStart = getMonday(new Date());
+  let mentorColorMap = {};
+  const mentorClassList = ['mentor1', 'mentor2'];
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    setupWeekNavigation();
+    await loadWeeklySchedules();
+  });
+
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+
+    // JS: Minggu = 0, Senin = 1
+    const diff = day === 0 ? -6 : 1 - day;
+
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+
+    return d;
+  }
+
+  function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  function addWeeks(date, weeks) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + (weeks * 7));
+    return result;
+  }
+
+  function toDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatDateHeader(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
+  function formatMonthYear(date) {
+    const monthNames = [
+      'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+      'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+    ];
+
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  function renderWeekHeader() {
+    const weekLabel = document.getElementById('weekLabel');
+    const dateHeads = document.querySelectorAll('.date-head');
+
+    if (weekLabel) {
+      weekLabel.value = formatMonthYear(currentWeekStart);
+    }
+
+    dateHeads.forEach((th, index) => {
+      const date = addDays(currentWeekStart, index);
+      th.textContent = formatDateHeader(date);
+    });
+  }
+
+  function setupWeekNavigation() {
+    const prevBtn = document.getElementById('prevWeekBtn');
+    const nextBtn = document.getElementById('nextWeekBtn');
+
+    renderWeekHeader();
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, -1);
+        renderWeekHeader();
+        await loadWeeklySchedules();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, 1);
+        renderWeekHeader();
+        await loadWeeklySchedules();
+      });
+    }
+  }
+
+  function generateJadwalRows(startHour, endHour) {
+    const tbody = document.getElementById('jadwal-body');
+    const intervals = ['00', '30'];
+    let rowIndex = 0;
+
+    tbody.innerHTML = '';
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let i = 0; i < intervals.length; i++) {
+        const jam = `${hour}.${intervals[i]}`;
+
+        if (hour === endHour && intervals[i] === '30') break;
+
+        const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+        const row = document.createElement('tr');
+        row.classList.add('main-row', rowColorClass);
+
+        for (let j = 0; j < 6; j++) {
+          row.innerHTML += `
+            <td class="time-cell">${jam}</td>
+            <td class="slot default-slot" data-day="${j}" data-time="${jam}"></td>
+          `;
+        }
+
+        tbody.appendChild(row);
+
+        const spacer = document.createElement('tr');
+        spacer.classList.add('spacer-row', rowColorClass);
+
+        tbody.appendChild(spacer);
+
+        rowIndex++;
+      }
+    }
+  }
+
+  async function loadWeeklySchedules() {
+    try {
+      mentorColorMap = {};
+
+      generateJadwalRows(7, 19);
+
+      const weekStart = toDateString(currentWeekStart);
+
+      const response = await fetch(`/api/schedules/week?week_start=${weekStart}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('GET WEEKLY SCHEDULES ERROR:', result);
+        alert(result.error || result.message || 'Gagal mengambil jadwal mingguan.');
+        return;
+      }
+
+      const filledBlocks = convertSchedulesToBlocks(result);
+
+      renderMentorLegend(result);
+      paintBlocks(filledBlocks, 'filled');
+    } catch (error) {
+      console.error('LOAD WEEKLY SCHEDULES ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil jadwal mingguan.');
+    }
+  }
+
+  function convertSchedulesToBlocks(schedules) {
+    return schedules
+      .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+      .sort((a, b) => {
+        if (String(a.date) !== String(b.date)) {
+          return String(a.date).localeCompare(String(b.date));
+        }
+
+        if (String(a.start_time) !== String(b.start_time)) {
+          return String(a.start_time).localeCompare(String(b.start_time));
+        }
+
+        return String(a.mentor_name || '').localeCompare(String(b.mentor_name || ''));
+      })
+      .map(schedule => {
+        const mentorClass = getMentorClass(schedule.mentor_id);
+
+        return {
+          day: Number(schedule.day_of_week),
+          start: formatTimeForTable(schedule.start_time),
+          end: formatTimeForTable(schedule.end_time),
+          mentor: mentorClass,
+          label: getScheduleLabel(schedule),
+          mentorName: schedule.mentor_name || 'Mentor'
+        };
+      });
+  }
+
+  function getScheduleLabel(schedule) {
+    const name = schedule.nickname || schedule.student_name || 'Nama Siswa';
+
+    if (schedule.source === 'exception') {
+      return `${name}`;
+    }
+
+    return name;
+  }
+
+  function getMentorClass(mentorId) {
+    if (mentorColorMap[mentorId]) {
+      return mentorColorMap[mentorId];
+    }
+
+    const usedCount = Object.keys(mentorColorMap).length;
+    const className = mentorClassList[usedCount % mentorClassList.length];
+
+    mentorColorMap[mentorId] = className;
+
+    return className;
+  }
+
+  function formatTimeForTable(timeValue) {paintBlocks
+    if (!timeValue) return '';
+
+    const timeString = String(timeValue);
+    const [hour, minute] = timeString.split(':');
+
+    return `${Number(hour)}.${minute}`;
+  }
+
+  function timeToMinutes(timeStr) {
+    const [hour, minute] = timeStr.split('.').map(Number);
+    return (hour * 60) + minute;
+  }
+
+  function paintBlocks(blocks, type = 'filled') {
+    blocks.forEach(block => {
+      const start = timeToMinutes(block.start);
+      const end = timeToMinutes(block.end);
+
+      document
+        .querySelectorAll(`.slot[data-day="${block.day}"], .slot-spacer[data-day="${block.day}"]`)
+        .forEach(cell => {
+          const cellTime = timeToMinutes(cell.dataset.time);
+
+          if (cellTime >= start && cellTime < end) {
+            cell.classList.remove('default-slot');
+            cell.classList.add('schedule-cell');
+
+            const stack = getOrCreateScheduleStack(cell);
+
+            const chip = document.createElement('div');
+            chip.classList.add('schedule-chip', `${type}-${block.mentor}`);
+
+            const isFirstCell =
+              cell.classList.contains('slot') &&
+              cell.dataset.time === block.start;
+
+            if (isFirstCell) {
+              chip.textContent = block.label;
+            }
+
+            stack.appendChild(chip);
+          }
+        });
+    });
+  }
+
+  function getOrCreateScheduleStack(cell) {
+    let stack = cell.querySelector('.schedule-stack');
+
+    if (!stack) {
+      stack = document.createElement('div');
+      stack.classList.add('schedule-stack');
+      cell.innerHTML = '';
+      cell.appendChild(stack);
+    }
+
+    return stack;
+  }
+
+  function renderMentorLegend(schedules) {
+    const legendContainer = document.querySelector('.keterangan');
+
+    if (!legendContainer) return;
+
+    const uniqueMentors = [];
+
+    schedules.forEach(schedule => {
+      const existing = uniqueMentors.find(item => Number(item.id) === Number(schedule.mentor_id));
+
+      if (!existing) {
+        uniqueMentors.push({
+          id: schedule.mentor_id,
+          name: schedule.mentor_name || `Mentor ${schedule.mentor_id}`,
+          className: getMentorClass(schedule.mentor_id)
+        });
+      }
+    });
+
+    if (uniqueMentors.length === 0) {
+      legendContainer.innerHTML = `
+        <span><span class="legend mentor1"></span> Belum ada jadwal</span>
+      `;
+      return;
+    }
+
+    legendContainer.innerHTML = uniqueMentors.map(mentor => {
+      return `
+        <span>
+          <span class="legend ${mentor.className}"></span>
+          ${mentor.name}
+        </span>
+      `;
+    }).join('');
+  }
+</script>
+<script src="../../assets/js/sidebar.js"></script>
+</body>
+</html>

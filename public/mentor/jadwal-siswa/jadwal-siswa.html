@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jadwal Siswa</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>    <main class="main-content">
+      <h1>Jadwal</h1>
+      <a class="btn-pengaturan" href="pengaturan-jadwal.html">Pengaturan Jadwal</a>
+      <div class="top-bar">
+        <div class="tabs">
+          <a href="jadwal-siswa.html" class="tab active">Jadwal Siswa</a>
+          <a href="jadwal-kosong.html" class="tab">Jadwal Kosong</a>
+          <a href="jadwal-all.html" class="tab">All</a>
+        </div>
+      </div>
+      <div class="jadwal-wrapper">
+        <div class="navigation">
+          <button>&larr; Previous Week</button>
+          <input type="text" placeholder="APRIL 2025" disabled />
+          <button>Next Week &rarr;</button>
+        </div>
+
+        <table class="jadwal-table">
+          <thead>
+            <tr>
+              <th>Senin</th>
+              <th>dd/mm/yyyy</th>
+              <th>Selasa</th>
+              <th>dd/mm/yyyy</th>
+              <th>Rabu</th>
+              <th>dd/mm/yyyy</th>
+              <th>Kamis</th>
+              <th>dd/mm/yyyy</th>
+              <th>Jumat</th>
+              <th>dd/mm/yyyy</th>
+              <th>Sabtu</th>
+              <th>dd/mm/yyyy</th>
+            </tr>
+          </thead>
+          <tbody id="jadwal-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+      <script>
+    const filledBlocks = [];
+
+    function generateJadwalRows(startHour, endHour) {
+        const tbody = document.getElementById('jadwal-body');
+        const intervals = ['00', '30'];
+        let rowIndex = 0;
+
+        for (let hour = startHour; hour <= endHour; hour++) {
+        for (let i = 0; i < intervals.length; i++) {
+            let jam = `${hour}.${intervals[i]}`;
+
+            if (hour === endHour && intervals[i] === '30') break;
+
+            const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+            let row = document.createElement('tr');
+            row.classList.add('main-row', rowColorClass);
+
+            for (let j = 0; j < 6; j++) {
+            row.innerHTML += `
+                <td class="time-cell">${jam}</td>
+                <td class="slot default-slot" data-day="${j}" data-time="${jam}"></td>
+            `;
+            }
+
+            tbody.appendChild(row);
+
+            let spacer = document.createElement('tr');
+            spacer.classList.add('spacer-row', rowColorClass);
+
+            for (let j = 0; j < 6; j++) {
+            spacer.innerHTML += `
+                <td class="empty-row time-spacer"></td>
+                <td class="empty-row slot-spacer" data-day="${j}" data-time="${jam}"></td>
+            `;
+            }
+
+            tbody.appendChild(spacer);
+
+            rowIndex++;
+        }
+        }
+    }
+
+    function timeToMinutes(timeStr) {
+        const [hour, minute] = timeStr.split('.').map(Number);
+        return hour * 60 + minute;
+    }
+
+    function paintBlocks(blocks, type = 'filled') {
+        blocks.forEach(block => {
+        const start = timeToMinutes(block.start);
+        const end = timeToMinutes(block.end);
+
+        document
+            .querySelectorAll(`.slot[data-day="${block.day}"], .slot-spacer[data-day="${block.day}"]`)
+            .forEach(cell => {
+            const cellTime = timeToMinutes(cell.dataset.time);
+
+            if (cellTime >= start && cellTime < end) {
+                cell.classList.remove('default-slot');
+                cell.classList.add(`${type}-${block.mentor}`);
+            }
+            });
+
+        const firstCell = document.querySelector(
+            `.slot[data-day="${block.day}"][data-time="${block.start}"]`
+        );
+
+        if (firstCell && block.label) {
+            firstCell.textContent = block.label;
+            firstCell.classList.add('student-label');
+        }
+        });
+    }
+
+    generateJadwalRows(7, 19);
+    paintBlocks(filledBlocks, 'filled');
+    </script>
+
+
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tambah Summary</title>
+  <link rel="stylesheet" href="summary.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Tambah Summary</h1>
+
+      <button class="btn-back" onclick="window.history.back()">Back</button>
+
+      <form class="summary-form" id="summaryForm">
+        <div class="form-group">
+          <label for="nama-siswa">Nama Siswa</label>
+          <select id="nama-siswa" name="namaSiswa">
+            <option value="">Value</option>
+            <option value="Astri Auliya Ardini">Astri Auliya Ardini</option>
+            <option value="Gabriel Jason Iskandar">Gabriel Jason Iskandar</option>
+            <option value="Rafael Kevin Iskandar">Rafael Kevin Iskandar</option>
+            <option value="Aulia Rahma">Aulia Rahma</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Level</label>
+          <select id="level" name="level">
+            <option value="">Value</option>
+            <option value="Level 1">Level 1</option>
+            <option value="Robotic 1">Robotic 1</option>
+            <option value="Robotic 2">Robotic 2</option>
+            <option value="Coding Intermediate">Coding Intermediate</option>
+          </select>
+        </div>
+
+        <div class="form-group form-date">
+          <label for="tanggal-kelas">Tanggal Kelas</label>
+          <input type="date" id="tanggal-kelas" name="tanggalKelas" />
+        </div>
+
+        <div class="form-group">
+          <label for="jenis-kelas">Jenis Kelas</label>
+          <select id="jenis-kelas" name="jenisKelas">
+            <option value="">Value</option>
+            <option value="Trial">Trial</option>
+            <option value="Reguler">Reguler</option>
+            <option value="Private">Private</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="detail-summary">Detail Summary</label>
+          <textarea id="detail-summary" name="detailSummary" placeholder="Value"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="keterangan">Keterangan</label>
+          <input type="text" id="keterangan" name="keterangan" placeholder="Value" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-form" onclick="window.history.back()">Cancel</button>
+          <button type="submit" class="btn-form">Save</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('summaryForm').addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      const summaryData = {
+        namaSiswa: document.getElementById('nama-siswa').value,
+        level: document.getElementById('level').value,
+        tanggalKelas: document.getElementById('tanggal-kelas').value,
+        jenisKelas: document.getElementById('jenis-kelas').value,
+        detailSummary: document.getElementById('detail-summary').value,
+        keterangan: document.getElementById('keterangan').value,
+        status: 'Pending'
+      };
+
+      localStorage.setItem('newSummaryData', JSON.stringify(summaryData));
+
+      alert('Summary berhasil disimpan sementara.');
+      window.location.href = '/mentor/summary/summary.html';
+    });
+  </script>
+
+  <script src="/assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

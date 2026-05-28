@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tukar Jadwal</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+    <h1>Tukar Jadwal</h1>
+    <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">Back</button>
+
+    <form action="#" class="form-outer">
+
+        <div class="form-group">
+          <label for="siswa">Nama Siswa</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="level">Nama Level</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <!-- Jadwal Lama -->
+        <div class="form-group jadwal-lama">
+        <h4>Jadwal Lama</h4>
+        <div class="days">
+            <!-- Jadwal Lama Day Blocks -->
+            <div class="day-block-lama" id="day1">
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+            <!-- Repeat for other days -->
+        </div>
+        </div>
+
+        <!-- Jadwal Baru -->
+        <div class="form-group jadwal-baru">
+        <h4>Jadwal Baru</h4>
+        <div class="days">
+            <div class="day-block" id="day1">
+              <label>Tanggal Mulai</label>
+              <select>
+                <option>Value</option>
+              </select>
+              <label>Jam</label>
+              <input type="time" />
+            </div>
+          </div>
+        </div>
+
+        <div class="validation">
+        <button type="button" class="btn-option">Cancel</button>
+        <button type="submit" class="btn-option">Simpan</button>
+        </div>
+    </form>
+    </main>
+  </div>
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

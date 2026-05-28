@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jadwal Kosong Mentor</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Jadwal</h1>
+
+      <a class="btn-pengaturan" href="pengaturan-jadwal.html">Pengaturan Jadwal</a>
+
+      <div class="top-bar">
+        <div class="tabs">
+          <a href="jadwal-siswa.html" class="tab">Jadwal Siswa</a>
+          <a href="jadwal-kosong.html" class="tab">Jadwal Kosong</a>
+          <a href="jadwal-all.html" class="tab active">All</a>
+        </div>
+      </div>
+
+      <div class="jadwal-wrapper">
+        <div id="info-popup" class="info-popup">
+          💡 Centang untuk menandai jadwal kosong anda
+        </div>
+
+        <div class="navigation">
+          <button>&larr; Previous Week</button>
+          <input type="text" placeholder="APRIL 2025" disabled />
+          <button>Next Week &rarr;</button>
+        </div>
+
+        <table class="jadwal-table jadwal-kosong-table">
+          <thead>
+            <tr>
+              <th>Senin</th>
+              <th>dd/mm/yyyy</th>
+              <th>Selasa</th>
+              <th>dd/mm/yyyy</th>
+              <th>Rabu</th>
+              <th>dd/mm/yyyy</th>
+              <th>Kamis</th>
+              <th>dd/mm/yyyy</th>
+              <th>Jumat</th>
+              <th>dd/mm/yyyy</th>
+              <th>Sabtu</th>
+              <th>dd/mm/yyyy</th>
+            </tr>
+          </thead>
+
+          <tbody id="jadwal-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+    <script>
+    const currentMentor = "mentor1";
+
+    const filledBlocks = [
+        { day: 1, start: "8.00", end: "9.00", mentor: "mentor1", label: "Nama Siswa" },
+        { day: 2, start: "12.30", end: "13.00", mentor: "mentor1", label: "Nama Siswa" },
+        { day: 2, start: "17.00", end: "18.00", mentor: "mentor1", label: "Nama Siswa" }
+    ];
+
+    const emptyBlocks = [
+        { day: 0, start: "9.30", end: "11.00", mentor: "mentor1" },
+        { day: 0, start: "15.00", end: "18.00", mentor: "mentor1" },
+        { day: 1, start: "12.00", end: "15.00", mentor: "mentor1" },
+        { day: 3, start: "16.00", end: "18.30", mentor: "mentor1" },
+        { day: 5, start: "8.00", end: "11.00", mentor: "mentor1" }
+    ];
+
+    function generateJadwalRows(startHour, endHour) {
+        const tbody = document.getElementById('jadwal-body');
+        const intervals = ['00', '30'];
+        let rowIndex = 0;
+
+        for (let hour = startHour; hour <= endHour; hour++) {
+        for (let i = 0; i < intervals.length; i++) {
+            const jam = `${hour}.${intervals[i]}`;
+
+            if (hour === endHour && intervals[i] === '30') break;
+
+            const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+            const row = document.createElement('tr');
+            row.classList.add('main-row', rowColorClass);
+
+            for (let day = 0; day < 6; day++) {
+            row.innerHTML += `
+                <td class="time-cell">${jam}</td>
+                <td class="slot default-slot" data-day="${day}" data-time="${jam}"></td>
+            `;
+            }
+
+            tbody.appendChild(row);
+            rowIndex++;
+        }
+        }
+    }
+
+    function timeToMinutes(timeStr) {
+        const [hour, minute] = timeStr.split('.').map(Number);
+        return hour * 60 + minute;
+    }
+
+    function paintBlocks(blocks, type) {
+        blocks.forEach(block => {
+        const start = timeToMinutes(block.start);
+        const end = timeToMinutes(block.end);
+
+        document
+            .querySelectorAll(`.slot[data-day="${block.day}"]`)
+            .forEach(cell => {
+            const cellTime = timeToMinutes(cell.dataset.time);
+
+            if (cellTime >= start && cellTime < end) {
+                cell.classList.remove('default-slot');
+
+                if (type === 'filled') {
+                cell.classList.remove('empty-mentor1', 'empty-mentor2');
+                }
+
+                cell.classList.add(`${type}-${block.mentor}`);
+            }
+            });
+
+        if (type === 'filled') {
+            const firstCell = document.querySelector(
+            `.slot[data-day="${block.day}"][data-time="${block.start}"]`
+            );
+
+            if (firstCell && block.label) {
+            firstCell.textContent = block.label;
+            firstCell.classList.add('student-label');
+            }
+        }
+        });
+    }
+
+    generateJadwalRows(7, 19);
+
+    const mentorEmptyBlocks = emptyBlocks.filter(block => block.mentor === currentMentor);
+    const mentorFilledBlocks = filledBlocks.filter(block => block.mentor === currentMentor);
+
+    paintBlocks(mentorEmptyBlocks, 'empty');
+    paintBlocks(mentorFilledBlocks, 'filled');
+    </script>
+
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

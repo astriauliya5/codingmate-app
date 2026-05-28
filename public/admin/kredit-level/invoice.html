@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invoice</title>
+  <link rel="stylesheet" href="kredit-level.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Invoice</h1>
+
+      <button class="btn" onclick="window.history.back()">Back</button>
+
+      <div class="invoice-container">
+        <div class="invoice-preview" id="invoice-preview">
+          <!-- Invoice akan digenerate JS -->
+        </div>
+
+        <div class="invoice-actions">
+          <button type="button" class="btn" onclick="window.history.back()">Cancel</button>
+          <button type="button" class="btn" onclick="saveInvoice()">Save</button>
+          <button type="button" class="btn" onclick="downloadInvoicePdf()">📥 Download Pdf</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+<script>
+  let currentInvoice = null;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    const invoiceId = params.get('id') || localStorage.getItem('lastInvoiceId');
+
+    if (!invoiceId) {
+      alert('ID invoice tidak ditemukan.');
+      window.location.href = '/admin/kredit-level/kredit-level.html';
+      return;
+    }
+
+    fetchInvoiceDetail(invoiceId);
+  });
+
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function formatRupiah(number) {
+    return 'Rp' + Number(number || 0).toLocaleString('id-ID');
+  }
+
+  function formatDate(dateValue) {
+    if (!dateValue) return '-';
+
+    const date = new Date(dateValue);
+
+    if (isNaN(date.getTime())) {
+      return dateValue;
+    }
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    const month = monthNames[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
+  }
+
+  async function fetchInvoiceDetail(invoiceId) {
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || 'Gagal mengambil detail invoice.');
+        return;
+      }
+
+      currentInvoice = result;
+      renderInvoice(result);
+    } catch (error) {
+      console.error('GET INVOICE DETAIL ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil detail invoice.');
+    }
+  }
+
+  function renderInvoice(invoice) {
+    const preview = document.getElementById('invoice-preview');
+
+    const rows = invoice.items.map((item, index) => {
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.student_name || '-'}</td>
+          <td>${item.level_name || '-'}</td>
+          <td>${item.class_type || '-'}</td>
+          <td>${item.credit_amount}x</td>
+          <td>${formatDate(invoice.invoice_date)}</td>
+          <td>${formatRupiah(item.subtotal)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    preview.innerHTML = `
+      <div class="invoice-header">
+        <div></div>
+
+        <div class="invoice-title-wrap">
+          <h2>INVOICE</h2>
+          <p>DATE : ${formatDate(invoice.invoice_date)}</p>
+          <p>NO : ${invoice.invoice_no}</p>
+        </div>
+      </div>
+
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Student's Name</th>
+            <th>Level</th>
+            <th>Jenis Kelas</th>
+            <th>Paid For</th>
+            <th>Date</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${rows}
+
+          <tr>
+            <td colspan="6" class="grand-total-label">GRAND TOTAL</td>
+            <td class="grand-total">${formatRupiah(invoice.grand_total)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="payment-info">
+        <p>Pelunasan dapat di transfer ke rekening:</p>
+
+        <div class="bank-box">
+          <strong>BCA</strong><br>
+          A/C 0113606131<br>
+          IRMA DWI PRATIWI
+        </div>
+      </div>
+    `;
+  }
+
+  function saveInvoice() {
+    alert('Invoice sudah tersimpan di database.');
+    window.location.href = '/admin/kredit-level/kredit-level.html';
+  }
+
+  function downloadInvoicePdf() {
+    const element = document.getElementById('invoice-preview');
+
+    if (!currentInvoice) {
+      alert('Data invoice belum tersedia.');
+      return;
+    }
+
+    element.classList.add('pdf-mode');
+
+    const options = {
+      margin: [8, 8, 8, 8],
+      filename: `${currentInvoice.invoice_no}.pdf`,
+      image: {
+        type: 'jpeg',
+        quality: 0.98
+      },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'landscape'
+      }
+    };
+
+    html2pdf()
+      .set(options)
+      .from(element)
+      .save()
+      .then(() => {
+        element.classList.remove('pdf-mode');
+      });
+  }
+</script>
+<script src="../../assets/js/sidebar.js"></script>
+</html>

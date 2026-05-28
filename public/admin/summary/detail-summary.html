@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Summary</title>
+  <link rel="stylesheet" href="summary.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+    <h1>Summary Class</h1>
+
+    <button class="btn-back" onclick="window.history.back()">Back</button>
+
+    <div class="summary-detail-card">
+        <div class="editor-toolbar">
+        <button type="button" onclick="formatText('undo')" title="Undo">↶</button>
+        <button type="button" onclick="formatText('redo')" title="Redo">↷</button>
+        <button type="button" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+        <button type="button" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+        <button type="button" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+        <button type="button" onclick="formatText('removeFormat')" title="Clear Format">Aɑ</button>
+        </div>
+
+        <div id="summaryEditor" class="summary-editor" contenteditable="true">
+            <!-- GENERATED -->
+        </div>
+
+        <div class="copy-wrapper">
+        <button type="button" class="btn-copy" onclick="copySummary()">💬 Copy Text</button>
+        </div>
+    </div>
+    </main>
+  </div>
+</body>
+<script>
+  function formatText(command) {
+    document.getElementById('summaryEditor').focus();
+    document.execCommand(command, false, null);
+  }
+
+  function copySummary() {
+    const editor = document.getElementById('summaryEditor');
+    const text = editor.innerText;
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Summary berhasil disalin!');
+    });
+  }
+
+
+  const data = JSON.parse(localStorage.getItem('summaryDetailData'));
+
+  const editor = document.getElementById('summaryEditor');
+
+  if (data) {
+    editor.innerHTML = `
+      <p>
+        Halo Ayah/Bunda, berikut ringkasan kelas untuk hari ini:<br>
+        ${data.nickname} mengikuti kelas <b>${data.level}</b>. 
+        Materi hari ini membahas seputar ${data.summary}
+      </p>
+
+      <p>
+        Sisa pertemuan: ${data.sisaPertemuan} kali sesi<br>
+        Masa expired: ${data.masaExpired}
+      </p>
+    `;
+  } else {
+    editor.innerHTML = `
+      <p>
+        Halo Ayah/Bunda, berikut ringkasan kelas untuk hari ini:<br>
+        - mengikuti kelas -. Materi hari ini membahas seputar -
+      </p>
+
+      <p>
+        Sisa pertemuan: - kali sesi<br>
+        Masa expired: -
+      </p>
+    `;
+  }
+
+  function formatText(command) {
+    editor.focus();
+    document.execCommand(command, false, null);
+  }
+
+  function copySummary() {
+    const text = editor.innerText;
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Summary berhasil disalin!');
+    });
+  }
+</script>
+<script src="../../assets/js/sidebar.js"></script>
+</html>

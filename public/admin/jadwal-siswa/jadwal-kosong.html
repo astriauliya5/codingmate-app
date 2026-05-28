@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jadwal Kosong</title>
+  <link rel="stylesheet" href="jadwal-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Jadwal</h1>
+      <a class="btn-pengaturan" href="pengaturan-jadwal.html">Pengaturan Jadwal</a>
+      <div class="top-bar">
+        <div class="mentor-toggle-wrap">
+            <button class="mentor-toggle active" data-mentor="mentor1">Mentor 1</button>
+            <button class="mentor-toggle" data-mentor="mentor2">Mentor 2</button>
+        </div>
+
+        <div class="tabs">
+            <a href="jadwal-siswa.html" class="tab">Jadwal Siswa</a>
+            <a href="jadwal-kosong.html" class="tab active">Jadwal Kosong</a>
+            <a href="jadwal-all.html" class="tab">All</a>
+        </div>
+      </div>
+
+      <div class="jadwal-wrapper">
+        <div class="navigation">
+          <button>&larr; Previous Week</button>
+          <input type="text" placeholder="APRIL 2025" disabled />
+          <button>Next Week &rarr;</button>
+        </div>
+
+        <table class="jadwal-table">
+          <thead>
+            <tr>
+              <th>Senin</th>
+              <th>dd/mm/yyyy</th>
+              <th>Selasa</th>
+              <th>dd/mm/yyyy</th>
+              <th>Rabu</th>
+              <th>dd/mm/yyyy</th>
+              <th>Kamis</th>
+              <th>dd/mm/yyyy</th>
+              <th>Jumat</th>
+              <th>dd/mm/yyyy</th>
+              <th>Sabtu</th>
+              <th>dd/mm/yyyy</th>
+            </tr>
+          </thead>
+          <tbody id="jadwal-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+<script>
+  const mentorSchedules = {
+    mentor1: [
+      { day: 0, start: "10.30", end: "13.00", mentor: "mentor1" },
+      { day: 1, start: "12.00", end: "13.00", mentor: "mentor1" },
+      { day: 2, start: "8.00", end: "11.00", mentor: "mentor1" }
+    ],
+    mentor2: [
+      { day: 0, start: "8.30", end: "12.00", mentor: "mentor2" },
+      { day: 1, start: "12.00", end: "13.00", mentor: "mentor2" },
+      { day: 2, start: "9.30", end: "11.00", mentor: "mentor2" }
+    ]
+  };
+
+  function generateJadwalRows(startHour, endHour) {
+    const tbody = document.getElementById('jadwal-body');
+    const intervals = ['00', '30'];
+    let rowIndex = 0;
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let i = 0; i < intervals.length; i++) {
+        let jam = `${hour}.${intervals[i]}`;
+
+        if (hour === endHour && intervals[i] === '30') break;
+
+        const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+        let row = document.createElement('tr');
+        row.classList.add('main-row', rowColorClass);
+
+        for (let j = 0; j < 6; j++) {
+          row.innerHTML += `
+            <td class="time-cell">${jam}</td>
+            <td class="slot default-slot" data-day="${j}" data-time="${jam}"></td>
+          `;
+        }
+
+        tbody.appendChild(row);
+
+        let spacer = document.createElement('tr');
+        spacer.classList.add('spacer-row', rowColorClass);
+
+        tbody.appendChild(spacer);
+
+        rowIndex++;
+      }
+    }
+  }
+
+  function timeToMinutes(timeStr) {
+    const [hour, minute] = timeStr.split('.').map(Number);
+    return hour * 60 + minute;
+  }
+
+  function clearSlots() {
+    document.querySelectorAll('.slot, .slot-spacer').forEach(cell => {
+      if (cell.classList.contains('slot')) {
+        cell.className = 'slot default-slot';
+      } else {
+        cell.className = 'empty-row slot-spacer';
+      }
+
+      cell.textContent = '';
+    });
+  }
+
+  function paintBlocks(blocks, type = 'empty') {
+    blocks.forEach(block => {
+      const start = timeToMinutes(block.start);
+      const end = timeToMinutes(block.end);
+
+      document
+        .querySelectorAll(`.slot[data-day="${block.day}"], .slot-spacer[data-day="${block.day}"]`)
+        .forEach(cell => {
+          const cellTime = timeToMinutes(cell.dataset.time);
+
+          if (cellTime >= start && cellTime < end) {
+            cell.classList.remove('default-slot');
+            cell.classList.add(`${type}-${block.mentor}`);
+          }
+        });
+    });
+  }
+
+  function renderMentor(mentorKey) {
+    clearSlots();
+    paintBlocks(mentorSchedules[mentorKey], 'empty');
+  }
+
+  generateJadwalRows(7, 19);
+  renderMentor('mentor1');
+
+  document.querySelectorAll('.mentor-toggle').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.mentor-toggle').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      renderMentor(this.dataset.mentor);
+    });
+  });
+</script>
+  <script src="../../assets/js/sidebar.js"></script>
+</body>
+</html>

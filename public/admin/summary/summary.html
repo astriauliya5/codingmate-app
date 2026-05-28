@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Summary</title>
+  <link rel="stylesheet" href="summary.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+    <h1>Summary Class</h1>
+
+    <div class="summary-top">
+        <div class="entry-box">
+        <label>
+            Tampilkan
+            <select>
+            <option>4</option>
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+            </select>
+            entri
+        </label>
+        </div>
+
+        <div class="search-box">
+        <input type="text" placeholder="🔍 Search">
+        </div>
+    </div>
+
+    <div class="summary-table-wrapper">
+        <table class="summary-table">
+        <thead>
+            <tr>
+            <th>No.</th>
+            <th>Id</th>
+            <th>Mentor</th>
+            <th>Full Name</th>
+            <th>Nickname</th>
+            <th>Level</th>
+            <th>Tanggal Kelas</th>
+            <th>Keterangan</th>
+            <th>Summary</th>
+            <th>Status</th>
+            <th>Jenis Kelas</th>
+            <th>Aksi</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+            <td>1</td>
+            <td>1001</td>
+            <td>Irma</td>
+            <td>Astri Auliya Ardini</td>
+            <td>Astri</td>
+            <td>Level 1</td>
+            <td>12/12/2024</td>
+            <td>bagus</td>
+            <td>mengkalibrasi angka</td>
+            <td><input type="checkbox" checked></td>
+            <td>Trial</td>
+            <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+            </td>
+            </tr>
+
+            <tr>
+            <td>2</td>
+            <td>1002</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td><input type="checkbox" checked></td>
+            <td>value</td>
+            <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+            </td>
+            </tr>
+
+            <tr>
+            <td>3</td>
+            <td>2001</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td><input type="checkbox" checked></td>
+            <td>value</td>
+            <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+            </td>
+            </tr>
+
+            <tr>
+            <td>4</td>
+            <td>2002</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td>value</td>
+            <td><input type="checkbox"></td>
+            <td>value</td>
+            <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+            </td>
+            </tr>
+        </tbody>
+        </table>
+    </div>
+    </main>
+  </div>
+</body>
+<script>
+  function openSummaryDetail(button) {
+    const row = button.closest('tr');
+
+    const nickname = row.children[4].innerText;
+    const level = row.children[5].innerText;
+    const summary = row.children[8].innerText;
+
+    const detailData = {
+      nickname: nickname,
+      level: level,
+      summary: summary,
+      sisaPertemuan: '',
+      masaExpired: ''
+    };
+
+    localStorage.setItem('summaryDetailData', JSON.stringify(detailData));
+
+    window.location.href = 'detail-summary.html';
+  }
+</script>
+<script src="../../assets/js/sidebar.js"></script>
+</html>

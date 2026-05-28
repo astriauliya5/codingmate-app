@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pendaftaran Siswa</title>
+  <link rel="stylesheet" href="data-siswa.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Pendaftaran Siswa Baru</h1>
+      <button class="btn" onclick="window.location.href='data-siswa.html'">Back</button>
+      <form id="student-form">
+        <div class="form-outer">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="full-name" name="full_name" placeholder="Value" required>
+          </div>        
+
+          <div class="form-group">
+            <label>Nickname</label>
+            <input type="text" id="nickname" name="nickname" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Foto Siswa</label>
+            <input type="file" id="photo" name="photo">
+          </div>
+
+          <div class="form-group">
+            <label>Parent Name</label>
+            <input type="text" id="parent-name" name="parent_name" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Born Date</label>
+            <input type="date" id="born-date" name="born_date">
+          </div>
+
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="age" name="age" placeholder="Auto" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>Tanggal Bergabung</label>
+            <input type="date" id="joined-date" name="joined_date">
+          </div>
+
+          <div class="form-group">
+            <label>Lama Bergabung</label>
+            <input type="text" id="duration" name="duration" placeholder="Auto" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>Kelas Awal</label>
+            <input type="text" id="initial-class" name="initial_class" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Kelas Sekarang</label>
+            <input type="text" id="current-class" name="current_class" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Nomor Telepon</label>
+            <input type="text" id="phone" name="phone" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Kota</label>
+            <input type="text" id="city" name="city" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Sekolah</label>
+            <input type="text" id="school" name="school" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Alamat</label>
+            <input type="text" id="address" name="address" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" name="email" placeholder="Value">
+          </div>
+
+          <div class="form-group">
+            <label>Gmaps</label>
+            <input type="text" id="gmaps" name="gmaps" placeholder="Value">
+          </div>
+
+          <div class="validation">
+            <button type="button" class="btn" onclick="window.history.back()">Cancel</button>
+            <button type="submit" class="btn">Simpan</button>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+  <script src="/assets/js/auth-guard.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const studentForm = document.getElementById('student-form');
+    const bornDateInput = document.getElementById('born-date');
+    const joinedDateInput = document.getElementById('joined-date');
+    const ageInput = document.getElementById('age');
+    const durationInput = document.getElementById('duration');
+
+    function getValue(id) {
+      const element = document.getElementById(id);
+      return element ? element.value.trim() : '';
+    }
+
+    function calculateAge(bornDate) {
+      if (!bornDate) return '';
+
+      const today = new Date();
+      const birth = new Date(bornDate);
+
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birth.getDate())
+      ) {
+        age--;
+      }
+
+      return age;
+    }
+
+    function calculateDuration(joinedDate) {
+      if (!joinedDate) return '';
+
+      const today = new Date();
+      const joined = new Date(joinedDate);
+
+      let years = today.getFullYear() - joined.getFullYear();
+      let months = today.getMonth() - joined.getMonth();
+
+      if (today.getDate() < joined.getDate()) {
+        months--;
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      if (years <= 0 && months <= 0) {
+        return 'Kurang dari 1 bulan';
+      }
+
+      if (years <= 0) {
+        return `${months} bulan`;
+      }
+
+      if (months <= 0) {
+        return `${years} tahun`;
+      }
+
+      return `${years} tahun ${months} bulan`;
+    }
+
+    bornDateInput.addEventListener('change', function () {
+      ageInput.value = calculateAge(this.value);
+    });
+
+    joinedDateInput.addEventListener('change', function () {
+      durationInput.value = calculateDuration(this.value);
+    });
+
+    studentForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const studentData = {
+        full_name: getValue('full-name'),
+        nickname: getValue('nickname'),
+        parent_name: getValue('parent-name'),
+        born_date: getValue('born-date') || null,
+        age: getValue('age') || null,
+        joined_date: getValue('joined-date') || null,
+        duration: getValue('duration'),
+        initial_class: getValue('initial-class'),
+        current_class: getValue('current-class'),
+        phone: getValue('phone'),
+        city: getValue('city'),
+        school: getValue('school'),
+        address: getValue('address'),
+        email: getValue('email'),
+        gmaps: getValue('gmaps'),
+        photo: document.getElementById('photo').files[0]
+          ? document.getElementById('photo').files[0].name
+          : null
+      };
+
+      if (!studentData.full_name) {
+        alert('Full Name wajib diisi.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/students', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(studentData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menambahkan data siswa.');
+          return;
+        }
+
+        alert('Data siswa berhasil ditambahkan.');
+        window.location.href = '/admin/data-siswa/data-siswa.html';
+      } catch (error) {
+        console.error('CREATE STUDENT ERROR:', error);
+        alert('Terjadi kesalahan saat menyimpan data siswa.');
+      }
+    });
+  });
+</script>
+  <script src="/assets/js/sidebar.js"></script>
+</body>
+</html>

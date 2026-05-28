@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Summary Mentor</title>
+  <link rel="stylesheet" href="summary.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Summary Class</h1>
+
+      <div class="summary-action-row">
+        <button class="btn-primary" onclick="window.location.href='tambah-summary.html'">
+          + Tambah Summary
+        </button>
+
+        <div class="summary-control">
+          <div class="search-box">
+            <input type="text" placeholder="🔍 Search">
+          </div>
+
+          <div class="entry-box">
+            <label>
+              Tampilkan
+              <select>
+                <option>4</option>
+                <option>10</option>
+                <option>25</option>
+                <option>50</option>
+              </select>
+              entri
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-table-wrapper">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Id</th>
+              <th>Full Name</th>
+              <th>Nickname</th>
+              <th>Level</th>
+              <th>Tanggal Kelas</th>
+              <th>Keterangan</th>
+              <th>Summary</th>
+              <th>Status</th>
+              <th>Jenis Kelas</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>1001</td>
+              <td>Astri Auliya Ardini</td>
+              <td>Astri</td>
+              <td>Level 1</td>
+              <td>12/12/2024</td>
+              <td>Hadir</td>
+              <td>Mengkalibrasi angka dan latihan logika dasar.</td>
+              <td><span class="status-badge pending">Pending</span></td>
+              <td>Trial</td>
+              <td>
+                <button class="btn-delete">✖ Hapus</button>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>2</td>
+              <td>1002</td>
+              <td>Gabriel Jason Iskandar</td>
+              <td>Gabriel</td>
+              <td>Robotic 2</td>
+              <td>13/12/2024</td>
+              <td>Hadir</td>
+              <td>Menyusun rangka robot sederhana dan mengenal sensor dasar.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Reguler</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>3</td>
+              <td>1003</td>
+              <td>Rafael Kevin Iskandar</td>
+              <td>Rafael</td>
+              <td>Robotic 2</td>
+              <td>14/12/2024</td>
+              <td>Hadir</td>
+              <td>Latihan coding blok dan memahami instruksi berurutan.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Reguler</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>4</td>
+              <td>1004</td>
+              <td>Aulia Rahma</td>
+              <td>Aulia</td>
+              <td>Coding Intermediate</td>
+              <td>15/12/2024</td>
+              <td>Hadir</td>
+              <td>Problem solving dasar dan penggunaan struktur logika sederhana.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Private</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>5</td>
+              <td>1005</td>
+              <td>Bima Santoso</td>
+              <td>Bima</td>
+              <td>Math Logic</td>
+              <td>16/12/2024</td>
+              <td>Hadir</td>
+              <td>Mengenal pola angka, urutan, dan latihan penalaran logis.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Reguler</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>6</td>
+              <td>1006</td>
+              <td>Citra Dewi Lestari</td>
+              <td>Citra</td>
+              <td>English Kids</td>
+              <td>17/12/2024</td>
+              <td>Hadir</td>
+              <td>Memperkenalkan diri dan menjawab pertanyaan sederhana.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Trial</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+
+            <tr>
+              <td>7</td>
+              <td>1007</td>
+              <td>Daffa Ramadhan</td>
+              <td>Daffa</td>
+              <td>Robotic 1</td>
+              <td>18/12/2024</td>
+              <td>Hadir</td>
+              <td>Mengenal roda, gear, dan merakit komponen sederhana.</td>
+              <td><span class="status-badge sent">Terkirim</span></td>
+              <td>Reguler</td>
+              <td>
+                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function openSummaryDetail(button) {
+      const row = button.closest('tr');
+
+      const nickname = row.children[3].innerText;
+      const level = row.children[4].innerText;
+      const summary = row.children[7].innerText;
+
+      const detailData = {
+        nickname: nickname,
+        level: level,
+        summary: summary,
+        sisaPertemuan: '',
+        masaExpired: ''
+      };
+
+      localStorage.setItem('summaryDetailData', JSON.stringify(detailData));
+
+      window.location.href = 'detail-summary.html';
+    }
+  </script>
+
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

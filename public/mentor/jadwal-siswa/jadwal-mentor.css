@@ -1,0 +1,620 @@
+
+
+.btn-pengaturan {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: medium;
+  text-decoration: none; /* supaya tidak ada underline */
+  display: inline-block; /* supaya bisa seperti tombol */
+}
+
+.btn-pengaturan:hover {
+  background: #444;
+}
+
+.keterangan {
+  padding-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.legend {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-radius: 3px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 0;
+}
+
+.keterangan,
+.mentor-toggle-wrap {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+  position:relative;
+  top: -20
+}
+
+.tabs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.legend.mentor1 {
+  background-color: #a657e3;
+}
+
+.legend.mentor2 {
+  background-color: #38e36a;
+}
+
+.legend.filled.mentor1 {
+  background-color: #9650f4;
+}
+
+.legend.filled.mentor2 {
+  background-color: #2df313;
+}
+
+.legend.empty.mentor1 {
+  background-color: rgba(166, 87, 227, 0.45);
+}
+
+.legend.empty.mentor2 {
+  background-color: rgba(56, 227, 106, 0.45);
+}
+
+.mentor-toggle-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mentor-toggle {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: white;
+  opacity: 0.55;
+}
+
+.mentor-toggle[data-mentor="mentor1"] {
+  background: #a657e3;
+}
+
+.mentor-toggle[data-mentor="mentor2"] {
+  background: #38e36a;
+  color: #111;
+}
+
+.mentor-toggle.active {
+  opacity: 1;
+}
+
+.tabs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0px;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.tab {
+  padding: 12px 20px 16px 20px;
+  min-width: 140px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+  color: #666;
+  background: #f3e59c;
+  border: none;
+  border-radius: 16px 16px 0 0;
+  cursor: pointer;
+  margin-bottom: -10px;
+  transition: transform 0.2s ease, z-index 0.2s;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.tab:hover {
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+.tab.active {
+  background: #e0bf12;
+  color: #111;
+  font-weight: bold;
+  z-index: 11;
+}
+
+.jadwal-wrapper {
+  background-color: white;
+  border: 1px solid #888;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 0px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.jadwal-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #eec3c3;
+  z-index: 2;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.navigation input {
+  flex-grow: 1;
+  padding: 8px;
+  text-align: center;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f3f3f3;
+  color: #333;
+}
+
+.navigation button {
+  background: none;
+  border: none;
+  color: #333;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.navigation button:hover {
+  background-color: #f6e882;
+}
+
+.jadwal-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.jadwal-table th {
+  background-color: #eec3c3;
+  padding: 4px;
+  font-weight: normal;
+  text-align: center;
+  font-size: 10px;
+}
+
+.jadwal-table td {
+  height: 24px;
+  border: 1px solid #ccc;
+  text-align: center;
+  font-size: 10px;
+  padding: 0;
+}
+
+/* WARNA BARIS JAM SELANG-SELING */
+.main-row.row-yellow .time-cell,
+.main-row.row-yellow .default-slot,
+.spacer-row.row-yellow .time-spacer,
+.spacer-row.row-yellow .slot-spacer {
+  background-color: #fffbd5;
+}
+
+.main-row.row-white .time-cell,
+.main-row.row-white .default-slot,
+.spacer-row.row-white .time-spacer,
+.spacer-row.row-white .slot-spacer {
+  background-color: #ffffff;
+}
+
+/* Biar jadwal yang terisi tetap menang dari warna selang-seling */
+.filled-mentor1 {
+  background-color: #9650f4 !important;
+  color: #111;
+}
+
+.filled-mentor2 {
+  background-color: #2df313 !important;
+  color: #111;
+}
+
+.empty-mentor1 {
+  background-color: rgba(166, 87, 227, 0.45) !important;
+}
+
+.empty-mentor2 {
+  background-color: rgba(56, 227, 106, 0.45) !important;
+}
+
+/* JADWAL TERISI - lebih vibrant */
+.filled-mentor1 {
+  background-color: #9650f4 !important;
+  color: #111;
+}
+
+.filled-mentor2 {
+  background-color: #2df313 !important;
+  color: #111;
+}
+
+/* JADWAL KOSONG - lebih opaque */
+.empty-mentor1 {
+  background-color: rgba(166, 87, 227, 0.45) !important;
+}
+
+.empty-mentor2 {
+  background-color: rgba(56, 227, 106, 0.45) !important;
+}
+
+.student-label {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* 
+JADWAL KOSONG */
+
+.jadwal-wrapper {
+  position: relative;
+}
+
+.jadwal-kosong-table td {
+  height: 20px;
+}
+
+.jadwal-kosong-table .slot {
+  position: relative;
+}
+
+.slot-checkbox {
+  width: 10px;
+  height: 10px;
+  cursor: pointer;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  accent-color: #222;
+}
+
+/* Warna baris selang-seling tanpa spacer row */
+.main-row.row-yellow .time-cell,
+.main-row.row-yellow .default-slot {
+  background-color: #fffbd5;
+}
+
+.main-row.row-white .time-cell,
+.main-row.row-white .default-slot {
+  background-color: #ffffff;
+}
+
+/* Jadwal kosong mentor */
+.empty-mentor1 {
+  background-color: rgba(166, 87, 227, 0.45) !important;
+}
+
+.empty-mentor2 {
+  background-color: rgba(56, 227, 106, 0.45) !important;
+}
+
+/* Biar checkbox tetap kelihatan saat cell berwarna */
+.empty-mentor1 .slot-checkbox,
+.empty-mentor2 .slot-checkbox {
+  accent-color: #ffffff;
+}
+
+/* Popup info awal */
+.info-popup {
+  position: absolute;
+  top: 100px;
+  right: 10px;
+  width: 360px;
+  background: #f6e88f;
+  color: #333;
+  padding: 14px 18px;
+  font-size: 14px;
+  box-sizing: border-box;
+  z-index: 20;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: all 0.3s ease;
+  border: 1px solid #e3d36d;
+}
+
+.info-popup.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tombol simpan bawah */
+.save-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.btn-save-jadwal {
+  background: #222;
+  color: white;
+  padding: 12px 34px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-save-jadwal:hover {
+  background: #444;
+}
+
+/* PENGATURAN JADWAL */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+  border: 1px solid #ccc; /* Border untuk form */
+  border-radius: 8px; /* Sudut melengkung */
+  padding: 20px; /* Padding dalam form */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sedikit bayangan agar lebih muncul */
+}
+
+.form-outer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+select, input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: #f6c241;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #444;
+}
+
+.btn {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+}
+
+.btn:hover {
+  background-color: #444;
+}
+
+.validation button {
+  display: inline-flex;  /* Tombol akan sejajar */
+  gap: 10px;  /* Memberikan spasi antara tombol */
+}
+
+.validation {
+  align-self: flex-end;
+}
+
+.btn-option {
+  background: #222;
+  color: white;
+  padding: 10px 40px;
+  margin-top: 20px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none; /* supaya tidak ada underline */
+  display: inline-block; /* supaya bisa seperti tombol */
+}
+
+.btn-option:hover {
+  background-color: #444;
+}
+
+/* TAMBAH BARU RUTIN*/
+
+select, input[type="time"] {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: #f6c241;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e0b73e;
+} */
+
+/* .btn-back {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+}
+
+.btn-back:hover {
+  background-color: #444;
+} */
+
+.btn-pertemuan {
+  background-color: #222;
+  color: #fff;
+  padding: 8px 20px;
+  margin-right: 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-pertemuan.active {
+  background-color: #f6c241;
+  font-weight: bold;
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 kolom */
+  grid-gap: 20px; /* Spasi antar blok */
+  margin-top: 20px;
+}
+
+.day-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+.day-block.hidden {
+  display: none; /* Use class to hide blocks */
+}
+
+.day-block h4 {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.day-block label {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.day-block select, .day-block input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.day-block select:focus, .day-block input:focus {
+  border-color: #f6c241;
+  outline: none;
+}
+
+/* UBAH JADWAL */
+
+.jadwal-lama {
+  background-color: #f5f5f5; /* Warna latar belakang untuk Jadwal Lama */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  opacity: 0.6; /* Menandakan Jadwal Lama tidak bisa diubah */
+}
+
+.jadwal-lama input, 
+.jadwal-lama select {
+  background-color: #e0e0e0; /* Mengubah latar belakang input menjadi lebih pudar */
+  border-color: #ccc;
+  pointer-events: none; /* Membuat input dan select tidak bisa diubah */
+}
+
+.jadwal-lama label {
+  color: #888; /* Memberikan warna teks yang lebih pudar */
+}
+
+.jadwal-baru {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.jadwal-lama h4, 
+.jadwal-baru h4 {
+  font-weight: bold;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.day-block-lama {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}

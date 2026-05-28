@@ -1,0 +1,337 @@
+/* SUMMARY MENTOR */
+
+.summary-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 35px;
+  margin-bottom: 28px;
+}
+
+.btn-primary {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-primary:hover {
+  background-color: #444;
+}
+
+.summary-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.search-box input {
+  width: 210px;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #ddd;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: #222;
+  background: #e6e6e6;
+}
+
+.entry-box label {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.entry-box select {
+  padding: 2px 8px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  font-size: 12px;
+  background: white;
+}
+
+.summary-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.summary-table th {
+  padding: 12px 10px;
+  border: 1px solid #aaa;
+  font-weight: normal;
+  background: #fff;
+}
+
+.summary-table td {
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+/* Khusus kolom Summary biar teksnya turun ke bawah */
+.summary-table td:nth-child(8) {
+  max-width: 140px;
+  white-space: normal;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Kolom Full Name */
+.summary-table th:nth-child(3),
+.summary-table td:nth-child(3) {
+  max-width: 110px;
+  width: 110px;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Kolom Level */
+.summary-table th:nth-child(5),
+.summary-table td:nth-child(5) {
+  max-width: 95px;
+  width: 95px;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+
+/* Status */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 85px;
+  min-height: 30px;
+  font-size: 11px;
+}
+
+.status-badge.pending {
+  background: #f6ef9a;
+  color: #8a7500;
+}
+
+.status-badge.sent {
+  background: #a9d18e;
+  color: #3d6b28;
+}
+
+/* Button aksi */
+.btn-detail {
+  background: #bfbfbf;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-detail:hover {
+  background: #999;
+}
+
+.btn-delete {
+  background: #e6e6e6;
+  color: #b00000;
+  border: none;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #d0d0d0;
+}
+
+/* DETAIL SUMMARY */
+.btn-back {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  background-color: #444;
+}
+
+.summary-detail-card {
+  width: 850px;
+  min-height: 500px;
+  margin-top: 20px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #f4f4f4;
+  padding: 18px 22px;
+  box-sizing: border-box;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.editor-toolbar button {
+  background: transparent;
+  border: none;
+  font-size: 30px;
+  font-weight: bold;
+  color: #111;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.editor-toolbar button:hover {
+  color: #555;
+}
+
+.summary-editor {
+  width: 100%;
+  min-height: 330px;
+  background: white;
+  padding: 28px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.2;
+  outline: none;
+  overflow-y: auto;
+}
+
+.summary-editor p {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.copy-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.btn-copy {
+  background: #222;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-copy:hover {
+  background: #444;
+}
+
+/* TAMBAH SUMMARY */
+
+.btn-back {
+  background: #222;
+  color: white;
+  padding: 10px 36px;
+  margin: 10px 0 18px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  background: #444;
+}
+
+.summary-form {
+  width: 850px;
+  background: #f4f4f4;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 22px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.summary-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-form label {
+  font-size: 14px;
+  font-weight: normal;
+  color: #222;
+}
+
+.summary-form input,
+.summary-form select,
+.summary-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #f7f7f7;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.summary-form input:focus,
+.summary-form select:focus,
+.summary-form textarea:focus {
+  background: #fff;
+  border-color: #222;
+}
+
+.summary-form textarea {
+  min-height: 130px;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+}
+
+.form-date input {
+  width: 230px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.btn-form {
+  background: #222;
+  color: white;
+  padding: 10px 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-form:hover {
+  background: #444;
+}

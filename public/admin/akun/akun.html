@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Akun</title>
+  <link rel="stylesheet" href="akun.css" />
+  <link rel="stylesheet" href="/assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Data Akun</h1>
+
+      <div class="akun-top">
+        <button class="btn" onclick="window.location.href='tambah-akun-mentor.html'">
+          + Tambah Akun Mentor
+        </button>
+
+        <div class="akun-control">
+          <div class="search-box">
+            <input type="text" placeholder="🔍 Search" />
+          </div>
+
+          <label class="entry-label">
+            Tampilkan
+            <select>
+              <option>4</option>
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+            entri
+          </label>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="akun-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Aksi</th>
+              <th>Username</th>
+              <th>Password</th>
+              <th>Nama Lengkap</th>
+              <th>E-Mail</th>
+              <th>No. Telp</th>
+              <th>Alamat</th>
+            </tr>
+          </thead>
+
+          <tbody id="akun-table-body">
+            <!-- Data akun mentor akan di-render di sini -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tableBody = document.querySelector('#akun-table-body');
+    const searchInput = document.querySelector('#search-akun');
+
+    let akunData = [];
+
+    fetchAkunMentor();
+
+    async function fetchAkunMentor() {
+      try {
+        const response = await fetch('/api/akun', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data akun mentor.');
+          return;
+        }
+
+        akunData = result;
+        renderAkunTable(akunData);
+      } catch (error) {
+        console.error('GET AKUN ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data akun.');
+      }
+    }
+
+    function renderAkunTable(data) {
+      tableBody.innerHTML = '';
+
+      data.forEach((akun, index) => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td>${index + 1}</td>
+
+          <td>
+            <button class="btn-delete" onclick="hapusAkun(${akun.id})">
+              ✖ Hapus
+            </button>
+          </td>
+
+          <td>
+            <button class="btn-username" onclick="openDetailAkun(${akun.id})">
+              ${akun.username || '-'}
+            </button>
+          </td>
+
+          <td>${akun.password_display || '********'}</td>
+          <td>${akun.full_name || '-'}</td>
+          <td>${akun.email || '-'}</td>
+          <td>${akun.phone || '-'}</td>
+          <td>${akun.address || '-'}</td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+
+        const filteredData = akunData.filter(akun =>
+          Object.values(akun).some(value =>
+            String(value).toLowerCase().includes(query)
+          )
+        );
+
+        renderAkunTable(filteredData);
+      });
+    }
+
+    window.openDetailAkun = function (id) {
+      window.location.href = `/admin/akun/detail-akun.html?id=${id}`;
+    };
+
+    window.hapusAkun = async function (id) {
+      const konfirmasi = confirm('Yakin ingin menghapus akun mentor ini?');
+
+      if (!konfirmasi) return;
+
+      try {
+        const response = await fetch(`/api/akun/${id}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menghapus akun mentor.');
+          return;
+        }
+
+        alert('Akun mentor berhasil dihapus.');
+        fetchAkunMentor();
+      } catch (error) {
+        console.error('DELETE AKUN ERROR:', error);
+        alert('Terjadi kesalahan saat menghapus akun mentor.');
+      }
+    };
+  });
+</script>
+<script src="/assets/js/sidebar.js"></script>

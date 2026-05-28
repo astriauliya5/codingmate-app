@@ -1,0 +1,188 @@
+
+
+/* TOP AREA */
+.akun-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 35px;
+  margin-bottom: 15px;
+}
+
+.btn {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background-color: #444;
+}
+
+.akun-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.search-box input {
+  width: 210px;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #ddd;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: #222;
+  background: #e6e6e6;
+}
+
+.entry-label {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.entry-label select {
+  padding: 2px 8px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  font-size: 12px;
+  background: white;
+}
+
+/* TABLE */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.akun-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.akun-table th {
+  padding: 12px 10px;
+  border: 1px solid #aaa;
+  font-weight: normal;
+  background: #fff;
+}
+
+.akun-table td {
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+.akun-table tbody tr:hover {
+  background: #f7f7f7;
+}
+
+/* BUTTON TABLE */
+.btn-delete {
+  border: none;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #e6e6e6;
+  color: #b00000;
+}
+
+.btn-delete:hover {
+  background: #d0d0d0;
+}
+
+.btn-username {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #111;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-username:hover {
+  text-decoration: underline;
+}
+
+/* TAMBAH AKUN MENTOR */
+.mentor-form {
+  width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.form-card {
+  background: #f4f4f4;
+  border: 1px solid #d0d0d0;
+  border-radius: 5px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.form-card h3 {
+  margin: 0 0 22px 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: #f8f8f8;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #777;
+  background: #fff;
+}
+
+.btn-save {
+  width: 100%;
+  background: #cfcfcf;
+  color: #222;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 45px;
+}
+
+.btn-save:hover {
+  background: #bfbfbf;
+}

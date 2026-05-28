@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="/assets/css/login.css">
+</head>
+
+<body>
+  <div class="LoginAdmin">
+    <div class="left-panel">
+      <div class="FormRegister">
+        <div class="WelcomeBack">Welcome Back!</div>
+
+        <div class="SubText">
+          Enter your credentials to securely access your dashboard and continue where you left off.
+        </div>
+
+        <form id="loginForm">
+          <div class="InputField">
+            <label class="Label" for="login">Email / Username</label>
+            <div class="Input">
+              <input 
+                type="text" 
+                id="login"
+                name="login"
+                placeholder="Insert your email / username" 
+                class="Value" 
+                required
+              />
+            </div>
+          </div>
+
+          <div class="InputField">
+            <label class="Label" for="password">Password</label>
+            <div class="Input">
+              <input 
+                type="password" 
+                id="password"
+                name="password"
+                placeholder="Insert your password" 
+                class="Value" 
+                required
+              />
+            </div>
+          </div>
+
+          <div class="CheckboxField">
+            <label class="CheckboxAndLabel">
+              <input type="checkbox" id="rememberMe" class="HiddenCheckbox" />
+              <span class="Label">Remember me</span>
+            </label>
+          </div>
+
+          <p id="errorMessage" class="ErrorMessage"></p>
+
+          <div class="ButtonGroup">
+            <button type="submit" class="Button">
+              <span class="ButtonText">Login</span>
+            </button>
+          </div>
+        </form>
+
+        <button type="button" class="ForgotPassword">
+          Forgot Password?
+        </button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="Layer"></div>
+
+      <div class="Logo">
+        <img src="/assets/img/logo.jpeg" alt="Coding Mate Logo">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const existingToken = localStorage.getItem('token');
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+      if (existingToken && currentUser) {
+        if (currentUser.role === 'admin') {
+          window.location.href = '/admin/jadwal-siswa/jadwal-siswa.html';
+        } else if (currentUser.role === 'mentor') {
+          window.location.href = '/mentor/jadwal-siswa/jadwal-siswa.html';
+        }
+      }
+    });
+
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+    loginForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const login = document.getElementById('login').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
+
+      errorMessage.textContent = '';
+
+      if (!login || !password) {
+        errorMessage.textContent = 'Email/username dan password wajib diisi.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            login: login,
+            password: password
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          errorMessage.textContent = result.message || 'Login gagal.';
+          return;
+        }
+
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('currentUser', JSON.stringify(result.user));
+
+        if (rememberMe) {
+          localStorage.setItem('rememberLogin', 'true');
+        } else {
+          localStorage.removeItem('rememberLogin');
+        }
+
+        window.location.href = result.redirectUrl;
+      } catch (error) {
+        console.error('LOGIN ERROR:', error);
+        errorMessage.textContent = 'Terjadi kesalahan saat login.';
+      }
+    });
+  </script>
+</body>
+</html>

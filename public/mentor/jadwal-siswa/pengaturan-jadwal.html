@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pengaturan Jadwal</title>
+  <link rel="stylesheet" href="jadwal-mentor.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+    <main class="main-content">
+      <h1>Pengaturan Jadwal</h1>
+      <button class="btn" onclick="window.location.href='jadwal-siswa.html'">Back</button>
+
+      <form action="#" class="form-outer">
+        <div class="form-group">
+          <label for="siswa">Nama Siswa</label>
+          <select id="siswa" name="siswa">
+            <option value="value1">Value</option>
+            <option value="value2">Value</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Nama Level</label>
+          <select id="level" name="level">
+            <option value="value1">Value</option>
+            <option value="value2">Value</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sisa-kredit">Sisa Kredit</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label>Pilihan:</label>
+          <div class="button-group">
+            <a type="button" class="btn-option" href="ubah-jadwal-rutin.html">Ubah Jadwal Rutin</a>
+            <a type="button" class="btn-option" href="tukar-jadwal.html">Tukar Jadwal</a>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+  <script src="../../assets/js/sidebar-mentor.js"></script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pengaturan Jadwal</title>
+  <link rel="stylesheet" href="jadwal-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/index.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div id="sidebar-container"></div>
+
+    <main class="main-content">
+      <h1>Pengaturan Jadwal</h1>
+
+      <button class="btn" onclick="window.location.href='jadwal-siswa.html'">
+        Back
+      </button>
+
+      <form action="#" class="form-outer">
+        <div class="form-group">
+          <label for="mentor">Nama Mentor</label>
+          <select id="mentor" name="mentor">
+            <option value="">Value</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="siswa">Nama Siswa</label>
+          <select id="siswa" name="siswa">
+            <option value="">Value</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Nama Level</label>
+          <select id="level" name="level">
+            <option value="">Value</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="class-type">Jenis Kelas</label>
+          <select id="class-type" name="class-type">
+            <option value="reguler">Reguler</option>
+            <option value="trial">Trial</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sisa-kredit">Sisa Kredit</label>
+          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label>Pilihan:</label>
+
+          <div class="button-group">
+            <a class="btn-option" href="tambah-baru-rutin.html" onclick="goToTambahRutin(event)">
+              Tambah Baru Rutin
+            </a>
+
+            <a class="btn-option" href="ubah-jadwal-rutin.html" onclick="goToUbahRutin(event)">
+              Ubah Jadwal Rutin
+            </a>
+
+            <a class="btn-option" href="tukar-jadwal.html" onclick="goToTukarJadwal(event)">
+              Tukar Jadwal
+            </a>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    let mentorsData = [];
+    let studentsData = [];
+    let levelsData = [];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadMentors();
+      await loadStudents();
+      await loadLevels();
+
+      document.getElementById('siswa').addEventListener('change', updateRemainingCredit);
+      document.getElementById('level').addEventListener('change', updateRemainingCredit);
+      document.getElementById('class-type').addEventListener('change', updateRemainingCredit);
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadMentors() {
+      try {
+        const response = await fetch('/api/akun', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data mentor.');
+          return;
+        }
+
+        mentorsData = result;
+
+        const mentorSelect = document.getElementById('mentor');
+        mentorSelect.innerHTML = `<option value="">Value</option>`;
+
+        mentorsData.forEach(mentor => {
+          const option = document.createElement('option');
+          option.value = mentor.id;
+          option.textContent = mentor.full_name || mentor.username;
+          mentorSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('LOAD MENTORS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data mentor.');
+      }
+    }
+
+    async function loadStudents() {
+      try {
+        const response = await fetch('/api/students', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data siswa.');
+          return;
+        }
+
+        studentsData = result;
+
+        const siswaSelect = document.getElementById('siswa');
+        siswaSelect.innerHTML = `<option value="">Value</option>`;
+
+        studentsData.forEach(student => {
+          const option = document.createElement('option');
+          option.value = student.id;
+          option.textContent = student.full_name;
+          siswaSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('LOAD STUDENTS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data siswa.');
+      }
+    }
+
+    async function loadLevels() {
+      try {
+        const response = await fetch('/api/levels', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal mengambil data level.');
+          return;
+        }
+
+        levelsData = result;
+
+        const levelSelect = document.getElementById('level');
+        levelSelect.innerHTML = `<option value="">Value</option>`;
+
+        levelsData.forEach(level => {
+          const option = document.createElement('option');
+          option.value = level.id;
+          option.textContent = level.level_name;
+          levelSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('LOAD LEVELS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data level.');
+      }
+    }
+
+    async function updateRemainingCredit() {
+      const studentId = document.getElementById('siswa').value;
+      const levelId = document.getElementById('level').value;
+      const sisaKreditInput = document.getElementById('sisa-kredit');
+
+      sisaKreditInput.value = 'Auto';
+
+      if (!studentId || !levelId) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/students/${studentId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          sisaKreditInput.value = '-';
+          return;
+        }
+
+        const selectedLevel = (result.levels || []).find(level => {
+          return Number(level.level_id) === Number(levelId);
+        });
+
+        if (!selectedLevel) {
+          sisaKreditInput.value = 'Belum ada kredit';
+          return;
+        }
+
+        sisaKreditInput.value = `${selectedLevel.remaining_credit} kredit`;
+      } catch (error) {
+        console.error('LOAD CREDIT ERROR:', error);
+        sisaKreditInput.value = '-';
+      }
+    }
+
+    function getScheduleContext() {
+      const mentorId = document.getElementById('mentor').value;
+      const studentId = document.getElementById('siswa').value;
+      const levelId = document.getElementById('level').value;
+      const classType = document.getElementById('class-type').value;
+      const sisaKredit = document.getElementById('sisa-kredit').value;
+
+      if (!mentorId || !studentId || !levelId || !classType) {
+        alert('Mentor, siswa, level, dan jenis kelas wajib dipilih.');
+        return null;
+      }
+
+      if (sisaKredit === 'Belum ada kredit' || sisaKredit === '-' || sisaKredit === 'Auto') {
+        alert('Siswa belum memiliki kredit untuk level ini. Buat invoice dan ubah status menjadi lunas terlebih dahulu.');
+        return null;
+      }
+
+      return {
+        mentor_id: mentorId,
+        student_id: studentId,
+        level_id: levelId,
+        class_type: classType
+      };
+    }
+
+    function saveScheduleContext() {
+      const context = getScheduleContext();
+
+      if (!context) return null;
+
+      localStorage.setItem('scheduleContext', JSON.stringify(context));
+
+      return context;
+    }
+
+    function goToTambahRutin(event) {
+      event.preventDefault();
+
+      const context = saveScheduleContext();
+
+      if (!context) return;
+
+      window.location.href = 'tambah-baru-rutin.html';
+    }
+
+    function goToUbahRutin(event) {
+      event.preventDefault();
+
+      const context = saveScheduleContext();
+
+      if (!context) return;
+
+      window.location.href = 'ubah-jadwal-rutin.html';
+    }
+
+    function goToTukarJadwal(event) {
+      event.preventDefault();
+
+      const context = saveScheduleContext();
+
+      if (!context) return;
+
+      window.location.href = 'tukar-jadwal.html';
+    }
+  </script>
+
+  <script src="../../assets/js/sidebar.js"></script>
+</body>
+</html>

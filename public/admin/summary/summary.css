@@ -1,0 +1,158 @@
+
+/* SUMMARY */
+.summary-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 35px;
+  margin-bottom: 28px;
+}
+
+.entry-box label {
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.entry-box select {
+  padding: 2px 8px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.search-box input {
+  width: 210px;
+  padding: 10px 12px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: #ddd;
+  font-size: 14px;
+}
+
+.summary-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.summary-table th {
+  padding: 12px 10px;
+  border: 1px solid #aaa;
+  font-weight: normal;
+  background: #fff;
+}
+
+.summary-table td {
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+.summary-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.btn-detail {
+  background: #bfbfbf;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-detail:hover {
+  background: #999;
+}
+
+/* DETAIL SUMMARY */
+.btn-back {
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  background-color: #444;
+}
+
+.summary-detail-card {
+  width: 850px;
+  min-height: 500px;
+  margin-top: 20px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #f4f4f4;
+  padding: 18px 22px;
+  box-sizing: border-box;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.editor-toolbar button {
+  background: transparent;
+  border: none;
+  font-size: 30px;
+  font-weight: bold;
+  color: #111;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.editor-toolbar button:hover {
+  color: #555;
+}
+
+.summary-editor {
+  width: 100%;
+  min-height: 330px;
+  background: white;
+  padding: 28px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.2;
+  outline: none;
+  overflow-y: auto;
+}
+
+.summary-editor p {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.copy-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.btn-copy {
+  background: #222;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-copy:hover {
+  background: #444;
+}
