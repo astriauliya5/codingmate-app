@@ -28,26 +28,31 @@
 
       <div class="jadwal-wrapper">
         <div class="navigation">
-          <button>&larr; Previous Week</button>
-          <input type="text" placeholder="APRIL 2025" disabled />
-          <button>Next Week &rarr;</button>
+          <button type="button" id="prevWeekBtn">&larr; Previous Week</button>
+          <input type="text" id="weekLabel" placeholder="APRIL 2025" disabled />
+          <button type="button" id="nextWeekBtn">Next Week &rarr;</button>
         </div>
 
         <table class="jadwal-table">
           <thead>
             <tr>
               <th>Senin</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="0">dd/mm/yyyy</th>
+
               <th>Selasa</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="1">dd/mm/yyyy</th>
+
               <th>Rabu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="2">dd/mm/yyyy</th>
+
               <th>Kamis</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="3">dd/mm/yyyy</th>
+
               <th>Jumat</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="4">dd/mm/yyyy</th>
+
               <th>Sabtu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="5">dd/mm/yyyy</th>
             </tr>
           </thead>
           <tbody id="jadwal-body"></tbody>
@@ -57,33 +62,125 @@
   </div>
 
 <script>
-  const mentorSchedules = {
-    mentor1: [
-      { day: 0, start: "10.30", end: "13.00", mentor: "mentor1" },
-      { day: 1, start: "12.00", end: "13.00", mentor: "mentor1" },
-      { day: 2, start: "8.00", end: "11.00", mentor: "mentor1" }
-    ],
-    mentor2: [
-      { day: 0, start: "8.30", end: "12.00", mentor: "mentor2" },
-      { day: 1, start: "12.00", end: "13.00", mentor: "mentor2" },
-      { day: 2, start: "9.30", end: "11.00", mentor: "mentor2" }
-    ]
-  };
+  let currentWeekStart = getMonday(new Date());
+  let allEmptySchedules = [];
+  let selectedMentorId = null;
+  let mentorColorMap = {};
+
+  const mentorClassList = ['mentor1', 'mentor2'];
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    setupWeekNavigation();
+    await loadWeeklyEmptySchedules();
+  });
+
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+
+    // JS: Minggu = 0, Senin = 1
+    const diff = day === 0 ? -6 : 1 - day;
+
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+
+    return d;
+  }
+
+  function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  function addWeeks(date, weeks) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + (weeks * 7));
+    return result;
+  }
+
+  function toDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatDateHeader(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
+  function formatMonthYear(date) {
+    const monthNames = [
+      'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+      'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+    ];
+
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  function renderWeekHeader() {
+    const weekLabel = document.getElementById('weekLabel');
+    const dateHeads = document.querySelectorAll('.date-head');
+
+    if (weekLabel) {
+      weekLabel.value = formatMonthYear(currentWeekStart);
+    }
+
+    dateHeads.forEach((th, index) => {
+      const date = addDays(currentWeekStart, index);
+      th.textContent = formatDateHeader(date);
+    });
+  }
+
+  function setupWeekNavigation() {
+    const prevBtn = document.getElementById('prevWeekBtn');
+    const nextBtn = document.getElementById('nextWeekBtn');
+
+    renderWeekHeader();
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, -1);
+        renderWeekHeader();
+        await loadWeeklyEmptySchedules();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, 1);
+        renderWeekHeader();
+        await loadWeeklyEmptySchedules();
+      });
+    }
+  }
 
   function generateJadwalRows(startHour, endHour) {
     const tbody = document.getElementById('jadwal-body');
     const intervals = ['00', '30'];
     let rowIndex = 0;
 
+    tbody.innerHTML = '';
+
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let i = 0; i < intervals.length; i++) {
-        let jam = `${hour}.${intervals[i]}`;
+        const jam = `${hour}.${intervals[i]}`;
 
         if (hour === endHour && intervals[i] === '30') break;
 
         const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
 
-        let row = document.createElement('tr');
+        const row = document.createElement('tr');
         row.classList.add('main-row', rowColorClass);
 
         for (let j = 0; j < 6; j++) {
@@ -95,7 +192,7 @@
 
         tbody.appendChild(row);
 
-        let spacer = document.createElement('tr');
+        const spacer = document.createElement('tr');
         spacer.classList.add('spacer-row', rowColorClass);
 
         tbody.appendChild(spacer);
@@ -105,56 +202,188 @@
     }
   }
 
-  function timeToMinutes(timeStr) {
-    const [hour, minute] = timeStr.split('.').map(Number);
-    return hour * 60 + minute;
-  }
+  async function loadWeeklyEmptySchedules() {
+    try {
+      mentorColorMap = {};
+      selectedMentorId = null;
 
-  function clearSlots() {
-    document.querySelectorAll('.slot, .slot-spacer').forEach(cell => {
-      if (cell.classList.contains('slot')) {
-        cell.className = 'slot default-slot';
-      } else {
-        cell.className = 'empty-row slot-spacer';
+      generateJadwalRows(7, 19);
+
+      const weekStart = toDateString(currentWeekStart);
+
+      const response = await fetch(`/api/empty-schedules/week?week_start=${weekStart}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('GET WEEKLY EMPTY SCHEDULES ERROR:', result);
+        alert(result.error || result.message || 'Gagal mengambil jadwal kosong mingguan.');
+        return;
       }
 
-      cell.textContent = '';
-    });
+      allEmptySchedules = result;
+
+      renderMentorToggles(allEmptySchedules);
+
+      const mentors = getUniqueMentors(allEmptySchedules);
+
+      if (mentors.length > 0) {
+        selectedMentorId = mentors[0].id;
+        setActiveMentorButton(selectedMentorId);
+        renderSelectedMentorSchedule();
+      }
+    } catch (error) {
+      console.error('LOAD WEEKLY EMPTY SCHEDULES ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil jadwal kosong mingguan.');
+    }
   }
 
-  function paintBlocks(blocks, type = 'empty') {
-    blocks.forEach(block => {
-      const start = timeToMinutes(block.start);
-      const end = timeToMinutes(block.end);
+  function getUniqueMentors(schedules) {
+    const mentors = [];
 
-      document
-        .querySelectorAll(`.slot[data-day="${block.day}"], .slot-spacer[data-day="${block.day}"]`)
-        .forEach(cell => {
-          const cellTime = timeToMinutes(cell.dataset.time);
+    schedules.forEach(schedule => {
+      const existing = mentors.find(item => Number(item.id) === Number(schedule.mentor_id));
 
-          if (cellTime >= start && cellTime < end) {
-            cell.classList.remove('default-slot');
-            cell.classList.add(`${type}-${block.mentor}`);
-          }
+      if (!existing) {
+        mentors.push({
+          id: schedule.mentor_id,
+          name: schedule.mentor_name || `Mentor ${schedule.mentor_id}`
         });
+      }
+    });
+
+    return mentors;
+  }
+
+  function renderMentorToggles(schedules) {
+    const toggleWrap = document.querySelector('.mentor-toggle-wrap');
+
+    if (!toggleWrap) return;
+
+    const mentors = getUniqueMentors(schedules);
+
+    if (mentors.length === 0) {
+      toggleWrap.innerHTML = `<span>Belum ada jadwal kosong minggu ini</span>`;
+      return;
+    }
+
+    toggleWrap.innerHTML = mentors.map(mentor => {
+      const mentorClass = getMentorClass(mentor.id);
+
+      return `
+        <button
+          type="button"
+          class="mentor-toggle"
+          data-mentor-id="${mentor.id}"
+          data-mentor="${mentorClass}"
+        >
+          ${mentor.name}
+        </button>
+      `;
+    }).join('');
+
+    document.querySelectorAll('.mentor-toggle').forEach(button => {
+      button.addEventListener('click', function () {
+        selectedMentorId = this.dataset.mentorId;
+        setActiveMentorButton(selectedMentorId);
+        renderSelectedMentorSchedule();
+      });
     });
   }
 
-  function renderMentor(mentorKey) {
-    clearSlots();
-    paintBlocks(mentorSchedules[mentorKey], 'empty');
+  function setActiveMentorButton(mentorId) {
+    document.querySelectorAll('.mentor-toggle').forEach(button => {
+      const isActive = Number(button.dataset.mentorId) === Number(mentorId);
+      button.classList.toggle('active', isActive);
+    });
   }
 
-  generateJadwalRows(7, 19);
-  renderMentor('mentor1');
+  function renderSelectedMentorSchedule() {
+    generateJadwalRows(7, 19);
 
-  document.querySelectorAll('.mentor-toggle').forEach(btn => {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.mentor-toggle').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      renderMentor(this.dataset.mentor);
+    const selectedSchedules = allEmptySchedules.filter(schedule => {
+      return Number(schedule.mentor_id) === Number(selectedMentorId);
     });
+
+    const emptyBlocks = convertEmptySchedulesToBlocks(selectedSchedules);
+
+    paintBlocks(emptyBlocks, 'empty');
+  }
+
+function convertEmptySchedulesToBlocks(schedules) {
+  return schedules
+    .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+    .sort((a, b) => {
+      if (String(a.date) !== String(b.date)) {
+        return String(a.date).localeCompare(String(b.date));
+      }
+
+      return String(a.start_time).localeCompare(String(b.start_time));
+    })
+    .map(schedule => {
+      const mentorClass = getMentorClass(schedule.mentor_id);
+
+      return {
+        day: Number(schedule.day_of_week),
+        start: formatTimeForTable(schedule.start_time),
+        end: formatTimeForTable(schedule.end_time),
+        mentor: mentorClass
+      };
+    });
+}
+
+  function getMentorClass(mentorId) {
+    if (mentorColorMap[mentorId]) {
+      return mentorColorMap[mentorId];
+    }
+
+    const usedCount = Object.keys(mentorColorMap).length;
+    const className = mentorClassList[usedCount % mentorClassList.length];
+
+    mentorColorMap[mentorId] = className;
+
+    return className;
+  }
+
+  function formatTimeForTable(timeValue) {
+    if (!timeValue) return '';
+
+    const timeString = String(timeValue);
+    const [hour, minute] = timeString.split(':');
+
+    return `${Number(hour)}.${minute}`;
+  }
+
+  function timeToMinutes(timeStr) {
+    const [hour, minute] = String(timeStr).split('.').map(Number);
+    return (hour * 60) + minute;
+  }
+
+function paintBlocks(blocks, type = 'empty') {
+  blocks.forEach(block => {
+    const start = timeToMinutes(block.start);
+    const end = timeToMinutes(block.end);
+
+    document
+      .querySelectorAll(`.slot[data-day="${block.day}"]`)
+      .forEach(cell => {
+        const cellTime = timeToMinutes(cell.dataset.time);
+
+        if (cellTime >= start && cellTime < end) {
+          cell.classList.remove('default-slot');
+          cell.classList.add(`${type}-${block.mentor}`);
+
+          // Jadwal kosong tidak perlu text/nama mentor.
+          // Indikator mentor cukup dari tombol warna di atas.
+          cell.textContent = '';
+        }
+      });
   });
+}
 </script>
   <script src="../../assets/js/sidebar.js"></script>
 </body>
