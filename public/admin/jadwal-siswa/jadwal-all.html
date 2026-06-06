@@ -30,26 +30,26 @@
 
       <div class="jadwal-wrapper">
         <div class="navigation">
-          <button>&larr; Previous Week</button>
-          <input type="text" placeholder="APRIL 2025" disabled />
-          <button>Next Week &rarr;</button>
+          <button type="button" id="prevWeekBtn">&larr; Previous Week</button>
+          <input type="text" id="weekLabel" placeholder="APRIL 2025" disabled />
+          <button type="button" id="nextWeekBtn">Next Week &rarr;</button>
         </div>
 
         <table class="jadwal-table">
           <thead>
             <tr>
               <th>Senin</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="0">dd/mm/yyyy</th>
               <th>Selasa</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="1">dd/mm/yyyy</th>
               <th>Rabu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="2">dd/mm/yyyy</th>
               <th>Kamis</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="3">dd/mm/yyyy</th>
               <th>Jumat</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="4">dd/mm/yyyy</th>
               <th>Sabtu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="5">dd/mm/yyyy</th>
             </tr>
           </thead>
           <tbody id="jadwal-body"></tbody>
@@ -58,106 +58,378 @@
     </main>
   </div>
 
-  <script>
-    const filledBlocks = [
-      { day: 1, start: "8.00", end: "9.00", mentor: "mentor1", label: "Nama Siswa" },
-      { day: 1, start: "10.30", end: "11.30", mentor: "mentor2", label: "Nama Siswa" },
-      { day: 2, start: "11.30", end: "12.00", mentor: "mentor2", label: "Nama Siswa" },
-      { day: 2, start: "12.00", end: "12.30", mentor: "mentor1", label: "Nama Siswa" }
+<script>
+  let currentWeekStart = getMonday(new Date());
+  let mentorColorMap = {};
+
+  const mentorClassList = ['mentor1', 'mentor2'];
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    setupWeekNavigation();
+    await loadAllWeeklySchedules();
+  });
+
+  function getToken() {
+    return localStorage.getItem('token');
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+
+    return d;
+  }
+
+  function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  function addWeeks(date, weeks) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + (weeks * 7));
+    return result;
+  }
+
+  function toDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatDateHeader(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
+  function formatMonthYear(date) {
+    const monthNames = [
+      'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+      'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
     ];
 
-    const emptyBlocks = [
-      { day: 0, start: "10.30", end: "13.00", mentor: "mentor1" },
-      { day: 1, start: "12.00", end: "13.00", mentor: "mentor1" },
-      { day: 2, start: "8.00", end: "11.00", mentor: "mentor1" },
+    return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+  }
 
-      { day: 0, start: "8.30", end: "12.00", mentor: "mentor2" },
-      { day: 1, start: "12.00", end: "13.00", mentor: "mentor2" },
-      { day: 2, start: "9.30", end: "11.00", mentor: "mentor2" }
-    ];
+  function renderWeekHeader() {
+    const weekLabel = document.getElementById('weekLabel');
+    const dateHeads = document.querySelectorAll('.date-head');
 
-    function generateJadwalRows(startHour, endHour) {
-      const tbody = document.getElementById('jadwal-body');
-      const intervals = ['00', '30'];
-      let rowIndex = 0;
-
-      for (let hour = startHour; hour <= endHour; hour++) {
-        for (let i = 0; i < intervals.length; i++) {
-          let jam = `${hour}.${intervals[i]}`;
-
-          if (hour === endHour && intervals[i] === '30') break;
-
-          const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
-
-          let row = document.createElement('tr');
-          row.classList.add('main-row', rowColorClass);
-
-          for (let j = 0; j < 6; j++) {
-            row.innerHTML += `
-              <td class="time-cell">${jam}</td>
-              <td class="slot default-slot" data-day="${j}" data-time="${jam}"></td>
-            `;
-          }
-
-          tbody.appendChild(row);
-
-          let spacer = document.createElement('tr');
-          spacer.classList.add('spacer-row', rowColorClass);
-
-          tbody.appendChild(spacer);
-
-          rowIndex++;
-        }
-      }
+    if (weekLabel) {
+      weekLabel.value = formatMonthYear(currentWeekStart);
     }
 
-    function timeToMinutes(timeStr) {
-      const [hour, minute] = timeStr.split('.').map(Number);
-      return hour * 60 + minute;
-    }
+    dateHeads.forEach((th, index) => {
+      const date = addDays(currentWeekStart, index);
+      th.textContent = formatDateHeader(date);
+    });
+  }
 
-    function paintBlocks(blocks, type) {
-      blocks.forEach(block => {
-        const start = timeToMinutes(block.start);
-        const end = timeToMinutes(block.end);
+  function setupWeekNavigation() {
+    const prevBtn = document.getElementById('prevWeekBtn');
+    const nextBtn = document.getElementById('nextWeekBtn');
 
-        document
-          .querySelectorAll(`.slot[data-day="${block.day}"], .slot-spacer[data-day="${block.day}"]`)
-          .forEach(cell => {
-            const cellTime = timeToMinutes(cell.dataset.time);
+    renderWeekHeader();
 
-            if (cellTime >= start && cellTime < end) {
-              cell.classList.remove('default-slot');
-
-              if (type === 'filled') {
-                cell.classList.remove('empty-mentor1', 'empty-mentor2');
-              }
-
-              cell.classList.add(`${type}-${block.mentor}`);
-            }
-          });
-
-        if (type === 'filled') {
-          const firstCell = document.querySelector(
-            `.slot[data-day="${block.day}"][data-time="${block.start}"]`
-          );
-
-          if (firstCell && block.label) {
-            firstCell.textContent = block.label;
-            firstCell.classList.add('student-label');
-          }
-        }
+    if (prevBtn) {
+      prevBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, -1);
+        renderWeekHeader();
+        await loadAllWeeklySchedules();
       });
     }
 
-    generateJadwalRows(7, 19);
+    if (nextBtn) {
+      nextBtn.addEventListener('click', async function () {
+        currentWeekStart = addWeeks(currentWeekStart, 1);
+        renderWeekHeader();
+        await loadAllWeeklySchedules();
+      });
+    }
+  }
 
-    // tampilkan jadwal kosong dulu
-    paintBlocks(emptyBlocks, 'empty');
+  function generateJadwalRows(startHour, endHour) {
+    const tbody = document.getElementById('jadwal-body');
+    const intervals = ['00', '30'];
+    let rowIndex = 0;
 
-    // lalu jadwal terisi menimpa jadwal kosong
-    paintBlocks(filledBlocks, 'filled');
-  </script>
-  <script src="/assets/js/sidebar.js"></script>
+    tbody.innerHTML = '';
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let i = 0; i < intervals.length; i++) {
+        const jam = `${hour}.${intervals[i]}`;
+
+        if (hour === endHour && intervals[i] === '30') break;
+
+        const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+
+        const row = document.createElement('tr');
+        row.classList.add('main-row', rowColorClass);
+
+        for (let j = 0; j < 6; j++) {
+          row.innerHTML += `
+            <td class="time-cell">${jam}</td>
+            <td class="slot default-slot" data-day="${j}" data-time="${jam}"></td>
+          `;
+        }
+
+        tbody.appendChild(row);
+
+        const spacer = document.createElement('tr');
+        spacer.classList.add('spacer-row', rowColorClass);
+        tbody.appendChild(spacer);
+
+        rowIndex++;
+      }
+    }
+  }
+
+  async function loadAllWeeklySchedules() {
+    try {
+      mentorColorMap = {};
+      generateJadwalRows(7, 19);
+
+      const weekStart = toDateString(currentWeekStart);
+      const token = getToken();
+
+      const [filledResponse, emptyResponse] = await Promise.all([
+        fetch(`/api/schedules/week?week_start=${weekStart}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }),
+        fetch(`/api/empty-schedules/week?week_start=${weekStart}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      ]);
+
+      const filledResult = await filledResponse.json();
+      const emptyResult = await emptyResponse.json();
+
+      if (!filledResponse.ok) {
+        console.error('GET WEEKLY SCHEDULES ERROR:', filledResult);
+        alert(filledResult.error || filledResult.message || 'Gagal mengambil jadwal siswa mingguan.');
+        return;
+      }
+
+      if (!emptyResponse.ok) {
+        console.error('GET WEEKLY EMPTY SCHEDULES ERROR:', emptyResult);
+        alert(emptyResult.error || emptyResult.message || 'Gagal mengambil jadwal kosong mingguan.');
+        return;
+      }
+
+      registerMentorColors(filledResult, emptyResult);
+      renderAllLegend(filledResult, emptyResult);
+
+      const emptyBlocks = convertEmptySchedulesToBlocks(emptyResult);
+      const filledBlocks = convertFilledSchedulesToBlocks(filledResult);
+
+      paintEmptyBlocks(emptyBlocks);
+      paintFilledBlocks(filledBlocks);
+    } catch (error) {
+      console.error('LOAD ALL WEEKLY SCHEDULES ERROR:', error);
+      alert('Terjadi kesalahan saat mengambil jadwal all mingguan.');
+    }
+  }
+
+  function registerMentorColors(filledSchedules, emptySchedules) {
+    const mentors = [];
+
+    [...filledSchedules, ...emptySchedules].forEach(schedule => {
+      const mentorId = schedule.mentor_id;
+
+      if (!mentorId) return;
+
+      const existing = mentors.find(item => Number(item.id) === Number(mentorId));
+
+      if (!existing) {
+        mentors.push({
+          id: mentorId,
+          name: schedule.mentor_name || `Mentor ${mentorId}`
+        });
+      }
+    });
+
+    mentors.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+    mentors.forEach((mentor, index) => {
+      mentorColorMap[mentor.id] = mentorClassList[index % mentorClassList.length];
+    });
+  }
+
+  function getMentorClass(mentorId) {
+    if (mentorColorMap[mentorId]) {
+      return mentorColorMap[mentorId];
+    }
+
+    const usedCount = Object.keys(mentorColorMap).length;
+    const className = mentorClassList[usedCount % mentorClassList.length];
+
+    mentorColorMap[mentorId] = className;
+
+    return className;
+  }
+
+  function convertFilledSchedulesToBlocks(schedules) {
+    return schedules
+      .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+      .sort((a, b) => {
+        if (String(a.date) !== String(b.date)) {
+          return String(a.date).localeCompare(String(b.date));
+        }
+
+        return String(a.start_time).localeCompare(String(b.start_time));
+      })
+      .map(schedule => {
+        const mentorClass = getMentorClass(schedule.mentor_id);
+
+        return {
+          day: Number(schedule.day_of_week),
+          start: formatTimeForTable(schedule.start_time),
+          end: formatTimeForTable(schedule.end_time),
+          mentor: mentorClass,
+          label: schedule.nickname || schedule.student_name || schedule.full_name || 'Nama Siswa'
+        };
+      });
+  }
+
+  function convertEmptySchedulesToBlocks(schedules) {
+    return schedules
+      .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+      .sort((a, b) => {
+        if (String(a.date) !== String(b.date)) {
+          return String(a.date).localeCompare(String(b.date));
+        }
+
+        return String(a.start_time).localeCompare(String(b.start_time));
+      })
+      .map(schedule => {
+        const mentorClass = getMentorClass(schedule.mentor_id);
+
+        return {
+          day: Number(schedule.day_of_week),
+          start: formatTimeForTable(schedule.start_time),
+          end: formatTimeForTable(schedule.end_time),
+          mentor: mentorClass
+        };
+      });
+  }
+
+  function formatTimeForTable(timeValue) {
+    if (!timeValue) return '';
+
+    const timeString = String(timeValue);
+    const [hour, minute] = timeString.split(':');
+
+    return `${Number(hour)}.${minute}`;
+  }
+
+  function timeToMinutes(timeStr) {
+    const [hour, minute] = String(timeStr).split('.').map(Number);
+    return (hour * 60) + minute;
+  }
+
+  function paintEmptyBlocks(blocks) {
+    blocks.forEach(block => {
+      const start = timeToMinutes(block.start);
+      const end = timeToMinutes(block.end);
+
+      document
+        .querySelectorAll(`.slot[data-day="${block.day}"]`)
+        .forEach(cell => {
+          const cellTime = timeToMinutes(cell.dataset.time);
+
+          if (cellTime >= start && cellTime < end) {
+            cell.classList.remove('default-slot');
+            cell.classList.add(`empty-${block.mentor}`);
+            cell.textContent = '';
+          }
+        });
+    });
+  }
+
+  function paintFilledBlocks(blocks) {
+    blocks.forEach(block => {
+      const start = timeToMinutes(block.start);
+      const end = timeToMinutes(block.end);
+
+      document
+        .querySelectorAll(`.slot[data-day="${block.day}"]`)
+        .forEach(cell => {
+          const cellTime = timeToMinutes(cell.dataset.time);
+
+          if (cellTime >= start && cellTime < end) {
+            cell.classList.remove('default-slot', 'empty-mentor1', 'empty-mentor2');
+            cell.classList.add(`filled-${block.mentor}`);
+
+            if (cell.dataset.time === block.start) {
+              cell.textContent = block.label;
+              cell.classList.add('student-label');
+            }
+          }
+        });
+    });
+  }
+
+  function renderAllLegend(filledSchedules, emptySchedules) {
+    const legendContainer = document.querySelector('.all-legend');
+
+    if (!legendContainer) return;
+
+    const mentors = [];
+
+    [...filledSchedules, ...emptySchedules].forEach(schedule => {
+      const mentorId = schedule.mentor_id;
+
+      if (!mentorId) return;
+
+      const existing = mentors.find(item => Number(item.id) === Number(mentorId));
+
+      if (!existing) {
+        mentors.push({
+          id: mentorId,
+          name: schedule.mentor_name || `Mentor ${mentorId}`,
+          className: getMentorClass(mentorId)
+        });
+      }
+    });
+
+    mentors.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+    if (mentors.length === 0) {
+      legendContainer.innerHTML = `
+        <span><span class="legend filled mentor1"></span> Belum ada jadwal minggu ini</span>
+      `;
+      return;
+    }
+
+    legendContainer.innerHTML = mentors.map(mentor => {
+      return `
+        <span>
+          <span class="legend filled ${mentor.className}"></span>
+          Terisi ${mentor.name}
+        </span>
+        <span>
+          <span class="legend empty ${mentor.className}"></span>
+          Kosong ${mentor.name}
+        </span>
+      `;
+    }).join('');
+  }
+</script>
+<script src="/assets/js/auth-guard.js"></script>
+<script src="/assets/js/sidebar.js"></script>
 </body>
 </html>

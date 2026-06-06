@@ -1,51 +1,51 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const sidebarContainer = document.getElementById('sidebar-container');
-
-  if (!sidebarContainer) {
-    console.error('Elemen #sidebar-container tidak ditemukan.');
-    return;
-  }
-
-  fetch('/components/sidebar-mentor.html')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('File sidebar mentor tidak ditemukan.');
-      }
-      return response.text();
-    })
-    .then(data => {
-      sidebarContainer.innerHTML = data;
-      setMentorProfileClick();
-      setSidebarUserEmail();
-    })
-    .catch(error => {
-      console.error('Sidebar mentor gagal dimuat:', error);
-    });
+  loadSidebarMentor();
 });
 
-function setMentorProfileClick() {
-  const emailProfile = document.querySelector('.email');
+async function loadSidebarMentor() {
+  try {
+    const response = await fetch('/components/sidebar-mentor.html');
+    const html = await response.text();
 
-  if (!emailProfile) return;
+    document.getElementById('sidebar-container').innerHTML = html;
 
-  emailProfile.addEventListener('click', function () {
-    const mentorData = {
-      username: 'mentor1',
-      namaLengkap: 'Mentor 1',
-      email: 'mentor1@gmail.com',
-      noTelp: '081234567890',
-      alamat: 'Yogyakarta'
-    };
-
-    localStorage.setItem('detailAkunMentorData', JSON.stringify(mentorData));
-  });
+    setupSidebarMentorUserInfo();
+    setupMentorLogout();
+  } catch (error) {
+    console.error('LOAD SIDEBAR MENTOR ERROR:', error);
+  }
 }
 
-function setSidebarUserEmail() {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  const emailElement = document.querySelector('.email');
+function setupSidebarMentorUserInfo() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-  if (!currentUser || !emailElement) return;
+    if (!currentUser) return;
 
-  emailElement.textContent = `👤 ${currentUser.email}`;
+    const emailElement = document.querySelector('.sidebar .email');
+
+    if (emailElement) {
+      emailElement.textContent = `👤 ${currentUser.email || currentUser.username || 'Mentor'}`;
+      emailElement.href = '/mentor/akun/detail-akun.html';
+    }
+  } catch (error) {
+    console.error('SETUP SIDEBAR MENTOR USER INFO ERROR:', error);
+  }
+}
+
+function setupMentorLogout() {
+  const logoutButton = document.querySelector('.sidebar .logout');
+
+  if (!logoutButton) return;
+
+  logoutButton.addEventListener('click', function () {
+    const confirmed = confirm('Yakin ingin logout?');
+
+    if (!confirmed) return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+
+    window.location.replace('/components/login.html');
+  });
 }

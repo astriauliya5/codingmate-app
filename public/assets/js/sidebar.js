@@ -1,32 +1,56 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const sidebarContainer = document.getElementById('sidebar-container');
-
-  if (!sidebarContainer) {
-    console.error('Elemen #sidebar-container tidak ditemukan.');
-    return;
-  }
-
-  fetch('/components/sidebar.html')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('File sidebar.html tidak ditemukan.');
-      }
-      return response.text();
-    })
-    .then(data => {
-      sidebarContainer.innerHTML = data;
-      setSidebarUserEmail();
-    })
-    .catch(error => {
-      console.error('Sidebar gagal dimuat:', error);
-    });
+  loadSidebar();
 });
 
-function setSidebarUserEmail() {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  const emailElement = document.querySelector('.email');
+async function loadSidebar() {
+  try {
+    const response = await fetch('/components/sidebar.html');
+    const html = await response.text();
 
-  if (!currentUser || !emailElement) return;
+    document.getElementById('sidebar-container').innerHTML = html;
 
-  emailElement.textContent = `👤 ${currentUser.email}`;
+    setupSidebarUserInfo();
+    setupLogout();
+  } catch (error) {
+    console.error('LOAD SIDEBAR ERROR:', error);
+  }
+}
+
+function setupSidebarUserInfo() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+    if (!currentUser) return;
+
+    const emailElement = document.querySelector('.sidebar .email');
+
+    if (emailElement) {
+      emailElement.textContent = `👤 ${currentUser.email || currentUser.username || 'Admin'}`;
+      emailElement.href = '/admin/akun/detail-akun.html';
+    }
+  } catch (error) {
+    console.error('SETUP SIDEBAR USER INFO ERROR:', error);
+  }
+}
+
+function setupLogout() {
+  const logoutButton = document.querySelector('.sidebar .logout');
+
+  if (!logoutButton) return;
+
+  logoutButton.addEventListener('click', function () {
+    const confirmed = confirm('Yakin ingin logout?');
+
+    if (!confirmed) return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+
+    window.location.replace('/components/login.html');
+  });
+}
+
+function openAdminProfile(event) {
+  event.preventDefault();
+  window.location.href = '/admin/akun/detail-akun.html';
 }

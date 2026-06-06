@@ -230,6 +230,67 @@ exports.createEmptySchedule = async (req, res) => {
         continue;
       }
 
+      const [routineConflictRows] = await connection.query(
+        `
+        SELECT rs.id
+        FROM routine_schedules rs
+        WHERE rs.mentor_id = ?
+        AND rs.day_of_week = ?
+        AND rs.status = 'active'
+        AND rs.start_date <= ?
+        AND (rs.end_date IS NULL OR rs.end_date >= ?)
+        AND (
+          (? < rs.end_time) AND (? > rs.start_time)
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM schedule_exceptions se
+          WHERE se.routine_schedule_id = rs.id
+          AND se.original_date = ?
+        )
+        LIMIT 1
+        `,
+        [
+          req.user.id,
+          dayOfWeek,
+          availableDate,
+          availableDate,
+          startTime,
+          endTime,
+          availableDate
+        ]
+      );
+
+      if (routineConflictRows.length > 0) {
+        skippedCount++;
+        continue;
+      }
+
+      const [exceptionConflictRows] = await connection.query(
+        `
+        SELECT se.id
+        FROM schedule_exceptions se
+        JOIN routine_schedules rs ON rs.id = se.routine_schedule_id
+        WHERE rs.mentor_id = ?
+        AND se.new_date = ?
+        AND (
+          (? < se.new_end_time) AND (? > se.new_start_time)
+        )
+        LIMIT 1
+        `,
+        [
+          req.user.id,
+          availableDate,
+          startTime,
+          endTime
+        ]
+      );
+
+      if (exceptionConflictRows.length > 0) {
+        skippedCount++;
+        continue;
+      }
+
       await connection.query(
         `
         INSERT INTO empty_schedules
@@ -279,39 +340,31 @@ exports.deleteEmptySchedule = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [rows] = await db.query(
-      `
-      SELECT id
-      FROM empty_schedules
+    let query = `
+      DELETE FROM empty_schedules
       WHERE id = ?
-      AND mentor_id = ?
-      AND status = 'active'
-      LIMIT 1
-      `,
-      [id, req.user.id]
-    );
+    `;
 
-    if (rows.length === 0) {
+    const params = [id];
+
+    if (req.user.role === 'mentor') {
+      query += ` AND mentor_id = ?`;
+      params.push(req.user.id);
+    }
+
+    const [result] = await db.query(query, params);
+
+    if (result.affectedRows === 0) {
       return res.status(404).json({
         message: 'Jadwal kosong tidak ditemukan'
       });
     }
 
-    await db.query(
-      `
-      UPDATE empty_schedules
-      SET status = 'cancelled'
-      WHERE id = ?
-      `,
-      [id]
-    );
-
     res.json({
-      message: 'Jadwal kosong berhasil dihapus'
+      message: 'Jadwal kosong berhasil dihapus permanen'
     });
   } catch (error) {
     console.error('DELETE EMPTY SCHEDULE ERROR:', error);
-    console.error('SQL MESSAGE:', error.sqlMessage);
 
     res.status(500).json({
       message: 'Gagal menghapus jadwal kosong',

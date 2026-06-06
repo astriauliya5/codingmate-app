@@ -19,12 +19,12 @@
 
       <div class="detail-layout">
         <section class="student-card">
-          <div class="photo-box">
+          <div class="photo-box" id="photoBox">
             <span>Foto</span>
           </div>
 
           <div id="siswa-detail-container">
-            <!-- Data siswa akan dimuat lewat JavaScript -->
+            <div>Memuat detail siswa...</div>
           </div>
         </section>
 
@@ -32,9 +32,8 @@
           <div id="level-record-container">
             <h2>Level Record</h2>
 
-            <div class="level-tabs">
-              <button class="level-tab active">Basic 1</button>
-              <button class="level-tab">Basic 2</button>
+            <div class="level-tabs" id="levelTabs">
+              <button class="level-tab active">-</button>
             </div>
 
             <table>
@@ -46,26 +45,9 @@
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody id="levelRecordBody">
                 <tr>
-                  <td>1</td>
-                  <td>12/12/2024</td>
-                  <td>Memahami instruksi dasar dan mengikuti kelas dengan baik.</td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>14/12/2024</td>
-                  <td>Mampu menyelesaikan latihan dengan arahan mentor.</td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>16/12/2024</td>
-                  <td>Mulai memahami konsep materi secara mandiri.</td>
-                </tr>
-                <tr>
-                  <td>4</td>
-                  <td>18/12/2024</td>
-                  <td>Aktif bertanya dan menunjukkan perkembangan positif.</td>
+                  <td colspan="3">Memuat level record...</td>
                 </tr>
               </tbody>
             </table>
@@ -74,33 +56,23 @@
           <div id="credit-container">
             <div class="credit-section">
               <h2>Sisa Kredit</h2>
-
-              <div class="credit-row">
-                <span>Basic 1</span>
-                <strong>:</strong>
-                <b>3</b>
-              </div>
-
-              <div class="credit-row">
-                <span>Basic 2</span>
-                <strong>:</strong>
-                <b>1</b>
+              <div id="remainingCreditList">
+                <div class="credit-row">
+                  <span>-</span>
+                  <strong>:</strong>
+                  <b>-</b>
+                </div>
               </div>
             </div>
 
             <div class="credit-section">
               <h2>Tanggal Expired</h2>
-
-              <div class="credit-row">
-                <span>Basic 1</span>
-                <strong>:</strong>
-                <b>3/5/2025</b>
-              </div>
-
-              <div class="credit-row">
-                <span>Basic 2</span>
-                <strong>:</strong>
-                <b>1/6/2025</b>
+              <div id="expiredDateList">
+                <div class="credit-row">
+                  <span>-</span>
+                  <strong>:</strong>
+                  <b>-</b>
+                </div>
               </div>
             </div>
           </div>
@@ -110,98 +82,278 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const params = new URLSearchParams(window.location.search);
-      const siswaIndex = params.get('id');
+    let studentDetailData = null;
+    let activeLevelId = null;
 
-      fetch('/data/dummyData.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('dummyData.json tidak ditemukan');
-          }
-
-          return response.json();
-        })
-        .then(dataSiswa => {
-          const siswa = dataSiswa[siswaIndex];
-          const container = document.getElementById("siswa-detail-container");
-
-          if (!siswa) {
-            container.innerHTML = `<div>Data siswa tidak ditemukan.</div>`;
-            return;
-          }
-
-          container.innerHTML = `
-            <div class="detail-row">
-              <span>Full Name</span>
-              <p>${siswa.fullName}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Nickname</span>
-              <p>${siswa.nickname}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Parent Name</span>
-              <p>${siswa.parentName}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Born Date</span>
-              <p>${siswa.bornaDate}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Age</span>
-              <p>${siswa.age}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Tgl. Bergabung</span>
-              <p>${siswa.joinedDate}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Lama Bergabung</span>
-              <p>${siswa.duration}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Kelas Awal</span>
-              <p>${siswa.initialClass}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Kelas Sekarang</span>
-              <p>${siswa.currentClass}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>No. Telp</span>
-              <p>${siswa.phone}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Kota</span>
-              <p>${siswa.city}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Sekolah</span>
-              <p>${siswa.school}</p>
-            </div>
-
-            <div class="detail-row">
-              <span>Email</span>
-              <p>${siswa.email}</p>
-            </div>
-          `;
-        })
-        .catch(error => console.error('Error fetching data:', error));
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadMentorStudentDetail();
     });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getStudentIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function loadMentorStudentDetail() {
+      const studentId = getStudentIdFromUrl();
+      const container = document.getElementById('siswa-detail-container');
+
+      if (!studentId) {
+        container.innerHTML = `<div>Data siswa tidak ditemukan karena ID siswa tidak tersedia.</div>`;
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/students/mentor/${studentId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET MENTOR STUDENT DETAIL ERROR:', result);
+          container.innerHTML = `<div>${escapeHtml(result.message || 'Gagal mengambil detail siswa.')}</div>`;
+          return;
+        }
+
+        studentDetailData = result;
+        renderStudentDetail(result.student);
+        renderCreditSections(result.levels);
+        renderLevelTabs(result.levels, result.records);
+      } catch (error) {
+        console.error('LOAD MENTOR STUDENT DETAIL ERROR:', error);
+        container.innerHTML = `<div>Terjadi kesalahan saat mengambil detail siswa.</div>`;
+      }
+    }
+
+    function renderStudentDetail(siswa) {
+      const container = document.getElementById('siswa-detail-container');
+      const photoBox = document.getElementById('photoBox');
+
+      if (siswa.photo) {
+        photoBox.innerHTML = `
+          <img 
+            src="${escapeHtml(siswa.photo)}" 
+            alt="Foto siswa" 
+            style="width: 100%; height: 100%; object-fit: cover;"
+          >
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="detail-row">
+          <span>Full Name</span>
+          <p>${escapeHtml(siswa.full_name || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Nickname</span>
+          <p>${escapeHtml(siswa.nickname || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Parent Name</span>
+          <p>${escapeHtml(siswa.parent_name || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Born Date</span>
+          <p>${formatDate(siswa.born_date)}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Age</span>
+          <p>${escapeHtml(siswa.age ?? '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Tgl. Bergabung</span>
+          <p>${formatDate(siswa.joined_date)}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Lama Bergabung</span>
+          <p>${escapeHtml(siswa.duration || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Kelas Awal</span>
+          <p>${escapeHtml(siswa.initial_class || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Kelas Sekarang</span>
+          <p>${escapeHtml(siswa.current_class || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>No. Telp</span>
+          <p>${escapeHtml(siswa.phone || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Kota</span>
+          <p>${escapeHtml(siswa.city || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Sekolah</span>
+          <p>${escapeHtml(siswa.school || '-')}</p>
+        </div>
+
+        <div class="detail-row">
+          <span>Email</span>
+          <p>${escapeHtml(siswa.email || '-')}</p>
+        </div>
+      `;
+    }
+
+    function renderCreditSections(levels) {
+      const remainingCreditList = document.getElementById('remainingCreditList');
+      const expiredDateList = document.getElementById('expiredDateList');
+
+      if (!levels || levels.length === 0) {
+        remainingCreditList.innerHTML = `
+          <div class="credit-row">
+            <span>-</span>
+            <strong>:</strong>
+            <b>-</b>
+          </div>
+        `;
+
+        expiredDateList.innerHTML = `
+          <div class="credit-row">
+            <span>-</span>
+            <strong>:</strong>
+            <b>-</b>
+          </div>
+        `;
+        return;
+      }
+
+      remainingCreditList.innerHTML = levels.map(level => {
+        return `
+          <div class="credit-row">
+            <span>${escapeHtml(level.level_name || '-')}</span>
+            <strong>:</strong>
+            <b>${escapeHtml(level.remaining_credit ?? '-')}</b>
+          </div>
+        `;
+      }).join('');
+
+      expiredDateList.innerHTML = levels.map(level => {
+        return `
+          <div class="credit-row">
+            <span>${escapeHtml(level.level_name || '-')}</span>
+            <strong>:</strong>
+            <b>${formatDate(level.latest_expired_at)}</b>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLevelTabs(levels, records) {
+      const tabsContainer = document.getElementById('levelTabs');
+      const recordBody = document.getElementById('levelRecordBody');
+
+      if (!levels || levels.length === 0) {
+        tabsContainer.innerHTML = `<button class="level-tab active">-</button>`;
+        recordBody.innerHTML = `
+          <tr>
+            <td colspan="3">Belum ada level aktif.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      activeLevelId = levels[0].level_id;
+
+      tabsContainer.innerHTML = levels.map((level, index) => {
+        return `
+          <button
+            type="button"
+            class="level-tab ${index === 0 ? 'active' : ''}"
+            onclick="setActiveLevel(${level.level_id})"
+          >
+            ${escapeHtml(level.level_name || '-')}
+          </button>
+        `;
+      }).join('');
+
+      renderLevelRecords(records || []);
+    }
+
+    function setActiveLevel(levelId) {
+      activeLevelId = Number(levelId);
+
+      document.querySelectorAll('.level-tab').forEach(button => {
+        const isActive = button.getAttribute('onclick')?.includes(`setActiveLevel(${levelId})`);
+        button.classList.toggle('active', isActive);
+      });
+
+      renderLevelRecords(studentDetailData.records || []);
+    }
+
+    function renderLevelRecords(records) {
+      const recordBody = document.getElementById('levelRecordBody');
+
+      const filteredRecords = records.filter(record => {
+        return Number(record.level_id) === Number(activeLevelId);
+      });
+
+      if (filteredRecords.length === 0) {
+        recordBody.innerHTML = `
+          <tr>
+            <td colspan="3">Belum ada record summary untuk level ini.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      recordBody.innerHTML = filteredRecords.map((record, index) => {
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${formatDate(record.class_date)}</td>
+            <td>${escapeHtml(record.keterangan || record.summary_text || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
   </script>
 
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="/assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

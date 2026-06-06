@@ -18,6 +18,7 @@ app.use('/api/levels', require('./src/routes/levelRoutes'));
 app.use('/api/invoices', require('./src/routes/invoiceRoutes'));
 app.use('/api/schedules', require('./src/routes/scheduleRoutes'));
 app.use('/api/empty-schedules', require('./src/routes/emptyScheduleRoutes'));
+app.use('/api/summaries', require('./src/routes/summaryRoutes'));
 
 // Halaman awal
 app.get('/', (req, res) => {

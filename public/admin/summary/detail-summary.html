@@ -6,96 +6,163 @@
   <title>Detail Summary</title>
   <link rel="stylesheet" href="summary.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
-
 </head>
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
+
     <main class="main-content">
-    <h1>Summary Class</h1>
+      <h1>Summary Class</h1>
 
-    <button class="btn-back" onclick="window.history.back()">Back</button>
+      <button class="btn-back" onclick="window.history.back()">Back</button>
 
-    <div class="summary-detail-card">
+      <div class="summary-detail-card">
         <div class="editor-toolbar">
-        <button type="button" onclick="formatText('undo')" title="Undo">↶</button>
-        <button type="button" onclick="formatText('redo')" title="Redo">↷</button>
-        <button type="button" onclick="formatText('bold')" title="Bold"><b>B</b></button>
-        <button type="button" onclick="formatText('italic')" title="Italic"><i>I</i></button>
-        <button type="button" onclick="formatText('underline')" title="Underline"><u>U</u></button>
-        <button type="button" onclick="formatText('removeFormat')" title="Clear Format">Aɑ</button>
+          <button type="button" onclick="formatText('undo')" title="Undo">↶</button>
+          <button type="button" onclick="formatText('redo')" title="Redo">↷</button>
+          <button type="button" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+          <button type="button" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+          <button type="button" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+          <button type="button" onclick="formatText('removeFormat')" title="Clear Format">Aɑ</button>
         </div>
 
         <div id="summaryEditor" class="summary-editor" contenteditable="true">
-            <!-- GENERATED -->
+          <p>Memuat detail summary...</p>
         </div>
 
         <div class="copy-wrapper">
-        <button type="button" class="btn-copy" onclick="copySummary()">💬 Copy Text</button>
+          <button type="button" class="btn-copy" onclick="copySummary()">💬 Copy Text</button>
         </div>
-    </div>
+      </div>
     </main>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadSummaryDetail();
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getSummaryIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function loadSummaryDetail() {
+      const editor = document.getElementById('summaryEditor');
+      const summaryId = getSummaryIdFromUrl();
+
+      if (!summaryId) {
+        editor.innerHTML = `
+          <p>
+            Detail summary tidak ditemukan karena ID summary tidak tersedia.
+          </p>
+        `;
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/summaries/admin/${summaryId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET SUMMARY DETAIL ERROR:', result);
+          editor.innerHTML = `
+            <p>
+              ${escapeHtml(result.message || 'Gagal mengambil detail summary.')}
+            </p>
+          `;
+          return;
+        }
+
+        renderSummaryTemplate(result);
+      } catch (error) {
+        console.error('LOAD SUMMARY DETAIL ERROR:', error);
+
+        editor.innerHTML = `
+          <p>
+            Terjadi kesalahan saat mengambil detail summary.
+          </p>
+        `;
+      }
+    }
+
+    function renderSummaryTemplate(summary) {
+      const editor = document.getElementById('summaryEditor');
+
+      const nickname = summary.nickname || summary.full_name || '-';
+      const level = summary.level_name || '-';
+      const summaryText = summary.summary_text || '-';
+      const remainingCredit = summary.remaining_credit ?? '-';
+      const expiredAt = formatDate(summary.latest_expired_at);
+
+      editor.innerHTML = `
+        <p>
+          Halo Ayah/Bunda, berikut ringkasan kelas untuk hari ini:<br>
+          ${escapeHtml(nickname)} mengikuti kelas <b>${escapeHtml(level)}</b>. 
+          Materi hari ini membahas seputar ${escapeHtml(summaryText)}
+        </p>
+
+        <p>
+          Sisa pertemuan: ${escapeHtml(remainingCredit)} kali sesi<br>
+          Masa expired: ${escapeHtml(expiredAt)}
+        </p>
+      `;
+    }
+
+    function formatText(command) {
+      const editor = document.getElementById('summaryEditor');
+      editor.focus();
+      document.execCommand(command, false, null);
+    }
+
+    function copySummary() {
+      const editor = document.getElementById('summaryEditor');
+      const text = editor.innerText;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Summary berhasil disalin!');
+      }).catch(error => {
+        console.error('COPY SUMMARY ERROR:', error);
+        alert('Gagal menyalin summary.');
+      });
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
+  <script src="../../assets/js/sidebar.js"></script>
 </body>
-<script>
-  function formatText(command) {
-    document.getElementById('summaryEditor').focus();
-    document.execCommand(command, false, null);
-  }
-
-  function copySummary() {
-    const editor = document.getElementById('summaryEditor');
-    const text = editor.innerText;
-
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Summary berhasil disalin!');
-    });
-  }
-
-
-  const data = JSON.parse(localStorage.getItem('summaryDetailData'));
-
-  const editor = document.getElementById('summaryEditor');
-
-  if (data) {
-    editor.innerHTML = `
-      <p>
-        Halo Ayah/Bunda, berikut ringkasan kelas untuk hari ini:<br>
-        ${data.nickname} mengikuti kelas <b>${data.level}</b>. 
-        Materi hari ini membahas seputar ${data.summary}
-      </p>
-
-      <p>
-        Sisa pertemuan: ${data.sisaPertemuan} kali sesi<br>
-        Masa expired: ${data.masaExpired}
-      </p>
-    `;
-  } else {
-    editor.innerHTML = `
-      <p>
-        Halo Ayah/Bunda, berikut ringkasan kelas untuk hari ini:<br>
-        - mengikuti kelas -. Materi hari ini membahas seputar -
-      </p>
-
-      <p>
-        Sisa pertemuan: - kali sesi<br>
-        Masa expired: -
-      </p>
-    `;
-  }
-
-  function formatText(command) {
-    editor.focus();
-    document.execCommand(command, false, null);
-  }
-
-  function copySummary() {
-    const text = editor.innerText;
-
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Summary berhasil disalin!');
-    });
-  }
-</script>
-<script src="../../assets/js/sidebar.js"></script>
 </html>

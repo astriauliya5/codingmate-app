@@ -24,7 +24,7 @@
             <input type="text" id="search" placeholder="🔍 Search">
           </div>
 
-          <select id="tampil" onchange="updateRows()">
+          <select id="tampil">
             <option value="20">Tampilkan 20 data</option>
             <option value="40">Tampilkan 40 data</option>
             <option value="60">Tampilkan 60 data</option>
@@ -53,7 +53,9 @@
           </thead>
 
           <tbody id="data-table-body">
-            <!-- Data akan di-generate menggunakan JavaScript -->
+            <tr>
+              <td colspan="15">Memuat data siswa...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -61,93 +63,153 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      let allDataSiswa = [];
-      let currentData = [];
+    let allDataSiswa = [];
+    let currentData = [];
 
-      fetch('/data/dummyData.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('dummyData.json tidak ditemukan');
-          }
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadMentorStudents();
 
-          return response.json();
-        })
-        .then(dataSiswa => {
-          allDataSiswa = dataSiswa.map((student, index) => ({
-            ...student,
-            originalIndex: index
-          }));
+      document.getElementById('search').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
 
-          currentData = allDataSiswa;
+        currentData = allDataSiswa.filter(student => {
+          const combinedText = [
+            student.full_name,
+            student.nickname,
+            student.parent_name,
+            student.born_date,
+            student.age,
+            student.joined_date,
+            student.duration,
+            student.initial_class,
+            student.current_class,
+            student.phone,
+            student.city,
+            student.school,
+            student.address,
+            student.email
+          ].join(' ').toLowerCase();
 
-          generateTableRows(currentData);
-
-          document.getElementById('search').addEventListener('input', function () {
-            const query = this.value.toLowerCase();
-
-            currentData = allDataSiswa.filter(student =>
-              Object.values(student).some(val =>
-                String(val).toLowerCase().includes(query)
-              )
-            );
-
-            generateTableRows(currentData);
-          });
-
-          document.getElementById('tampil').addEventListener('change', function () {
-            generateTableRows(currentData);
-          });
-        })
-        .catch(error => console.error('Error fetching data:', error));
-
-      function generateTableRows(data) {
-        const tableBody = document.querySelector("#data-table-body");
-        const jumlahTampil = Number(document.getElementById('tampil').value);
-
-        tableBody.innerHTML = '';
-
-        data.slice(0, jumlahTampil).forEach((student, index) => {
-          const row = document.createElement('tr');
-
-          row.innerHTML = `
-            <td>${index + 1}</td>
-
-            <td>
-              <button class="btn-name" onclick="showDetailSiswa(${student.originalIndex})">
-                ${student.fullName}
-              </button>
-            </td>
-
-            <td>${student.nickname}</td>
-            <td>${student.parentName}</td>
-            <td>${student.bornaDate}</td>
-            <td>${student.age}</td>
-            <td>${student.joinedDate}</td>
-            <td>${student.duration}</td>
-            <td>${student.initialClass}</td>
-            <td>${student.currentClass}</td>
-            <td>${student.phone}</td>
-            <td>${student.city}</td>
-            <td>${student.school}</td>
-            <td>${student.address}</td>
-            <td>${student.email}</td>
-          `;
-
-          tableBody.appendChild(row);
+          return combinedText.includes(query);
         });
+
+        generateTableRows(currentData);
+      });
+
+      document.getElementById('tampil').addEventListener('change', function () {
+        generateTableRows(currentData);
+      });
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadMentorStudents() {
+      try {
+        const response = await fetch('/api/students/mentor', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET MENTOR STUDENTS ERROR:', result);
+          alert(result.message || 'Gagal mengambil data siswa mentor.');
+          return;
+        }
+
+        allDataSiswa = result;
+        currentData = allDataSiswa;
+
+        generateTableRows(currentData);
+      } catch (error) {
+        console.error('LOAD MENTOR STUDENTS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data siswa mentor.');
+      }
+    }
+
+    function generateTableRows(data) {
+      const tableBody = document.querySelector('#data-table-body');
+      const jumlahTampil = Number(document.getElementById('tampil').value);
+
+      tableBody.innerHTML = '';
+
+      const limitedData = data.slice(0, jumlahTampil);
+
+      if (limitedData.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="15">Belum ada data siswa.</td>
+          </tr>
+        `;
+        return;
       }
 
-      window.showDetailSiswa = function (index) {
-        window.location.href = `detail-data-siswa.html?id=${index}`;
-      };
+      limitedData.forEach((student, index) => {
+        const row = document.createElement('tr');
 
-      window.updateRows = function () {
-        generateTableRows(currentData);
-      };
-    });
+        row.innerHTML = `
+          <td>${index + 1}</td>
+
+          <td>
+            <button class="btn-name" onclick="showDetailSiswa(${student.id})">
+              ${escapeHtml(student.full_name || '-')}
+            </button>
+          </td>
+
+          <td>${escapeHtml(student.nickname || '-')}</td>
+          <td>${escapeHtml(student.parent_name || '-')}</td>
+          <td>${formatDate(student.born_date)}</td>
+          <td>${escapeHtml(student.age ?? '-')}</td>
+          <td>${formatDate(student.joined_date)}</td>
+          <td>${escapeHtml(student.duration || '-')}</td>
+          <td>${escapeHtml(student.initial_class || '-')}</td>
+          <td>${escapeHtml(student.current_class || '-')}</td>
+          <td>${escapeHtml(student.phone || '-')}</td>
+          <td>${escapeHtml(student.city || '-')}</td>
+          <td>${escapeHtml(student.school || '-')}</td>
+          <td>${escapeHtml(student.address || '-')}</td>
+          <td>${escapeHtml(student.email || '-')}</td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    }
+
+    function showDetailSiswa(studentId) {
+      window.location.href = `detail-data-siswa.html?id=${studentId}`;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
   </script>
 
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="/assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

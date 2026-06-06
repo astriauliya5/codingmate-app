@@ -104,6 +104,28 @@ form {
   gap: 8px;
 }
 
+.btn-simpan-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-simpan {
+  background: #222;
+  color: white;
+  padding: 10px ;
+  margin: 10px 0 18px 0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: medium;
+}
+
+.btn-simpan:hover {
+  background: #444;
+}
+
 label {
   font-weight: bold;
   font-size: 14px;
@@ -320,3 +342,37 @@ input[type="text"], input[type="email"], input[type="number"], input[type="date"
   }
 }
 
+
+/* PHOTOBOX */
+.photo-box {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-box:hover .photo-overlay {
+  opacity: 1;
+}
+
+.hidden-photo-input {
+  display: none;
+}

@@ -558,6 +558,27 @@ exports.createRoutineSchedule = async (req, res) => {
       });
     }
 
+await connection.query(
+  `
+  UPDATE empty_schedules
+  SET status = 'cancelled'
+  WHERE mentor_id = ?
+  AND available_date >= ?
+  AND available_date <= ?
+  AND status = 'active'
+  AND (
+    (? < end_time) AND (? > start_time)
+  )
+  `,
+  [
+    mentor_id,
+    start_date,
+    endDate,
+    start_time,
+    end_time
+  ]
+);
+
     if (!studentLevel.mentor_id) {
       await connection.query(
         `

@@ -7,178 +7,320 @@
   <link rel="stylesheet" href="jadwal-mentor.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
+
     <main class="main-content">
-    <h1>Ubah Jadwal Rutin</h1>
-    <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">Back</button>
+      <h1>Ubah Jadwal Rutin</h1>
 
-    <form action="#" class="form-outer">
+      <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">
+        Back
+      </button>
+
+      <form id="updateRoutineScheduleForm" action="#" class="form-outer">
+        <div class="form-group">
+          <label for="mentor-name">Nama Mentor</label>
+          <input type="text" id="mentor-name" name="mentor-name" value="Auto" disabled />
+        </div>
 
         <div class="form-group">
-          <label for="siswa">Nama Siswa</label>
+          <label for="student-name">Nama Siswa</label>
+          <input type="text" id="student-name" name="student-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="level-name">Nama Level</label>
+          <input type="text" id="level-name" name="level-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="class-type-name">Jenis Kelas</label>
+          <input type="text" id="class-type-name" name="class-type-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="sisa-kredit">Sisa Kredit</label>
           <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
         </div>
 
         <div class="form-group">
-          <label for="level">Nama Level</label>
-          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+          <label for="schedule-id">Jadwal Rutin Lama</label>
+          <select id="schedule-id" name="schedule-id">
+            <option value="">Pilih Jadwal</option>
+          </select>
         </div>
 
-        <!-- Jadwal Lama -->
-        <div class="form-group jadwal-lama">
-        <h4>Jadwal Lama</h4>
-        <label>Total Pertemuan (dalam seminggu):</label>
-        <div class="total-pertemuan-lama">
-            <button type="button" class="btn-pertemuan" data-pertemuan="1" disabled>1 x</button>
-            <button type="button" class="btn-pertemuan active" data-pertemuan="2">2 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="3" disabled>3 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="4" disabled>4 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="5" disabled>5 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="6" disabled>6 x</button>
-        </div>
-        <div class="days">
-            <!-- Jadwal Lama Day Blocks -->
-            <div class="day-block-lama" id="day1">
-              <h4>Day 1</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block-lama" id="day2">
-              <h4>Day 2</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <!-- Repeat for other days -->
-        </div>
-        </div>
+        <div class="form-group">
+          <label>Jadwal Baru:</label>
 
-        <!-- Jadwal Baru -->
-        <div class="form-group jadwal-baru">
-        <h4>Jadwal Baru</h4>
-        <label>Total Pertemuan (dalam seminggu):</label>
-        <div class="total-pertemuan">
-            <button type="button" class="btn-pertemuan" data-pertemuan="1">1 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="2">2 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="3">3 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="4">4 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="5">5 x</button>
-            <button type="button" class="btn-pertemuan" data-pertemuan="6">6 x</button>
-        </div>
-        <div class="days">
-            <div class="day-block" id="day1">
-              <h4>Day 1</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
+          <div class="days">
+            <div class="day-block">
+              <h4>Ubah Jadwal</h4>
+
+              <label>Hari</label>
+              <select id="day-select" class="day-select">
+                <option value="">Value</option>
+                <option value="0">Senin</option>
+                <option value="1">Selasa</option>
+                <option value="2">Rabu</option>
+                <option value="3">Kamis</option>
+                <option value="4">Jumat</option>
+                <option value="5">Sabtu</option>
               </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block" id="day2">
-              <h4>Day 2</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block" id="day3">
-              <h4>Day 3</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block" id="day4">
-              <h4>Day 4</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block" id="day5">
-              <h4>Day 5</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
-            </div>
-            <div class="day-block" id="day6">
-              <h4>Day 6</h4>
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
+
+              <label>Jam Mulai</label>
+              <input type="time" id="start-time" class="start-time" />
+
+              <label>Jam Selesai</label>
+              <input type="time" id="end-time" class="end-time" readonly />
             </div>
           </div>
         </div>
 
         <div class="validation">
-        <button type="button" class="btn-option">Cancel</button>
-        <button type="submit" class="btn-option">Simpan</button>
+          <button type="button" class="btn-option" onclick="window.location.href='pengaturan-jadwal.html'">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn-option">
+            Simpan
+          </button>
         </div>
-    </form>
+      </form>
     </main>
   </div>
 
   <script>
-    const totalPertemuanButtons = document.querySelectorAll('.btn-pertemuan');
-const dayBlocks = document.querySelectorAll('.day-block');
+    let scheduleContext = null;
+    let currentSchedules = [];
 
-// Initially hide all day blocks
-dayBlocks.forEach(block => block.classList.add('hidden'));
+    document.addEventListener('DOMContentLoaded', async function () {
+      const form = document.getElementById('updateRoutineScheduleForm');
+      const scheduleSelect = document.getElementById('schedule-id');
+      const startTimeInput = document.getElementById('start-time');
 
-// Set default for "Jadwal Baru" (2x)
-totalPertemuanButtons[1].classList.add(); // 2x button is active by default
-dayBlocks.forEach((block, index) => {
-  if (index < 2) {
-    block.classList.remove('hidden'); // Show Day 1 and Day 2 for "Jadwal Baru"
-  } else {
-    block.classList.add('hidden'); // Hide the rest
-  }
-});
+      scheduleContext = JSON.parse(sessionStorage.getItem('mentorScheduleContext'));
 
-// Event listener to handle the toggle of day blocks based on Total Pertemuan
-totalPertemuanButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    // Remove the active state from all buttons
-    totalPertemuanButtons.forEach(btn => btn.classList.remove('active'));
-
-    // Add the active state to the clicked button
-    button.classList.add('active');
-    
-    const pertemuanCount = button.getAttribute('data-pertemuan');
-    
-    // Hide or show day blocks based on the selected pertemuan count
-    dayBlocks.forEach((block, index) => {
-      if (index < pertemuanCount) {
-        block.classList.remove('hidden'); // Show the block
-      } else {
-        block.classList.add('hidden'); // Hide the block
+      if (!scheduleContext) {
+        alert('Data pengaturan jadwal belum dipilih.');
+        window.location.href = 'pengaturan-jadwal.html';
+        return;
       }
+
+      loadScheduleContextDetail();
+      await loadRoutineSchedules();
+
+      scheduleSelect.addEventListener('change', fillSelectedSchedule);
+
+      startTimeInput.addEventListener('change', function () {
+        document.getElementById('end-time').value = addOneHour(this.value);
+      });
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        await submitUpdateRoutineSchedule();
+      });
     });
-  });
-});
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getCurrentUser() {
+      try {
+        return JSON.parse(localStorage.getItem('currentUser'));
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function formatClassType(value) {
+      if (value === 'trial') return 'Trial';
+      return 'Reguler';
+    }
+
+    function getDayName(day) {
+      const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      return dayNames[Number(day)] || '-';
+    }
+
+    function normalizeTime(timeValue) {
+      if (!timeValue) return '';
+      return timeValue.length === 5 ? `${timeValue}:00` : timeValue;
+    }
+
+    function timeForInput(timeValue) {
+      if (!timeValue) return '';
+      return String(timeValue).slice(0, 5);
+    }
+
+    function addOneHour(timeValue) {
+      if (!timeValue) return '';
+
+      const [hour, minute] = timeValue.split(':').map(Number);
+
+      const date = new Date();
+      date.setHours(hour);
+      date.setMinutes(minute);
+      date.setSeconds(0);
+      date.setHours(date.getHours() + 1);
+
+      const endHour = String(date.getHours()).padStart(2, '0');
+      const endMinute = String(date.getMinutes()).padStart(2, '0');
+
+      return `${endHour}:${endMinute}`;
+    }
+
+    function loadScheduleContextDetail() {
+      const currentUser = getCurrentUser();
+
+      document.getElementById('mentor-name').value =
+        currentUser?.full_name || currentUser?.username || '-';
+
+      document.getElementById('student-name').value =
+        scheduleContext.student_name || '-';
+
+      document.getElementById('level-name').value =
+        scheduleContext.level_name || '-';
+
+      document.getElementById('class-type-name').value = 'Pilih jadwal lama';
+
+      document.getElementById('sisa-kredit').value =
+        typeof scheduleContext.remaining_credit !== 'undefined'
+          ? `${scheduleContext.remaining_credit} kredit`
+          : '-';
+    }
+
+    async function loadRoutineSchedules() {
+      try {
+        const response = await fetch('/api/schedules', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || result.error || 'Gagal mengambil data jadwal rutin.');
+          return;
+        }
+
+        const currentUser = getCurrentUser();
+        const mentorId = currentUser?.id;
+
+        const schedules = Array.isArray(result) ? result : [];
+
+        currentSchedules = schedules.filter(schedule => {
+          const sameStudent = Number(schedule.student_id) === Number(scheduleContext.student_id);
+          const sameLevel = Number(schedule.level_id) === Number(scheduleContext.level_id);
+          const sameMentor = !mentorId || Number(schedule.mentor_id) === Number(mentorId);
+          const isActive = !schedule.status || schedule.status === 'active';
+
+          return sameStudent && sameLevel && sameMentor && isActive;
+        });
+
+        const scheduleSelect = document.getElementById('schedule-id');
+        scheduleSelect.innerHTML = `<option value="">Pilih Jadwal</option>`;
+
+        currentSchedules.forEach(schedule => {
+          const option = document.createElement('option');
+          option.value = schedule.id;
+
+          option.textContent =
+            `${getDayName(schedule.day_of_week)} | ${timeForInput(schedule.start_time)} - ${timeForInput(schedule.end_time)} | ${formatClassType(schedule.class_type)}`;
+
+          scheduleSelect.appendChild(option);
+        });
+
+        if (currentSchedules.length === 0) {
+          alert('Belum ada jadwal rutin untuk siswa dan level ini.');
+        }
+      } catch (error) {
+        console.error('LOAD ROUTINE SCHEDULES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data jadwal rutin.');
+      }
+    }
+
+    function fillSelectedSchedule() {
+      const scheduleId = document.getElementById('schedule-id').value;
+
+      const selectedSchedule = currentSchedules.find(schedule => {
+        return Number(schedule.id) === Number(scheduleId);
+      });
+
+      if (!selectedSchedule) {
+        document.getElementById('day-select').value = '';
+        document.getElementById('start-time').value = '';
+        document.getElementById('end-time').value = '';
+        document.getElementById('class-type-name').value = 'Pilih jadwal lama';
+        return;
+      }
+
+      document.getElementById('day-select').value = selectedSchedule.day_of_week;
+      document.getElementById('start-time').value = timeForInput(selectedSchedule.start_time);
+      document.getElementById('end-time').value = timeForInput(selectedSchedule.end_time);
+      document.getElementById('class-type-name').value = formatClassType(selectedSchedule.class_type);
+    }
+
+    async function submitUpdateRoutineSchedule() {
+      const scheduleId = document.getElementById('schedule-id').value;
+      const dayOfWeek = document.getElementById('day-select').value;
+      const startTime = normalizeTime(document.getElementById('start-time').value);
+      const endTime = normalizeTime(document.getElementById('end-time').value);
+
+      if (!scheduleId) {
+        alert('Pilih jadwal rutin lama terlebih dahulu.');
+        return;
+      }
+
+      if (!dayOfWeek || !startTime || !endTime) {
+        alert('Hari, jam mulai, dan jam selesai wajib diisi.');
+        return;
+      }
+
+      if (startTime >= endTime) {
+        alert('Jam mulai harus lebih kecil dari jam selesai.');
+        return;
+      }
+
+      const confirmed = confirm('Yakin ingin mengubah jadwal rutin ini?');
+
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/schedules/routine/${scheduleId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            day_of_week: Number(dayOfWeek),
+            start_time: startTime,
+            end_time: endTime
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || result.error || 'Gagal mengubah jadwal rutin.');
+          return;
+        }
+
+        alert('Jadwal rutin berhasil diperbarui.');
+        window.location.href = '/mentor/jadwal-siswa/jadwal-siswa.html';
+      } catch (error) {
+        console.error('UPDATE ROUTINE SCHEDULE ERROR:', error);
+        alert('Terjadi kesalahan saat mengubah jadwal rutin.');
+      }
+    }
   </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

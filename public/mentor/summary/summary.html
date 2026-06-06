@@ -22,13 +22,13 @@
 
         <div class="summary-control">
           <div class="search-box">
-            <input type="text" placeholder="🔍 Search">
+            <input type="text" id="searchInput" placeholder="🔍 Search">
           </div>
 
           <div class="entry-box">
             <label>
               Tampilkan
-              <select>
+              <select id="entrySelect">
                 <option>4</option>
                 <option>10</option>
                 <option>25</option>
@@ -58,118 +58,9 @@
             </tr>
           </thead>
 
-          <tbody>
+          <tbody id="summaryBody">
             <tr>
-              <td>1</td>
-              <td>1001</td>
-              <td>Astri Auliya Ardini</td>
-              <td>Astri</td>
-              <td>Level 1</td>
-              <td>12/12/2024</td>
-              <td>Hadir</td>
-              <td>Mengkalibrasi angka dan latihan logika dasar.</td>
-              <td><span class="status-badge pending">Pending</span></td>
-              <td>Trial</td>
-              <td>
-                <button class="btn-delete">✖ Hapus</button>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>2</td>
-              <td>1002</td>
-              <td>Gabriel Jason Iskandar</td>
-              <td>Gabriel</td>
-              <td>Robotic 2</td>
-              <td>13/12/2024</td>
-              <td>Hadir</td>
-              <td>Menyusun rangka robot sederhana dan mengenal sensor dasar.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Reguler</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>3</td>
-              <td>1003</td>
-              <td>Rafael Kevin Iskandar</td>
-              <td>Rafael</td>
-              <td>Robotic 2</td>
-              <td>14/12/2024</td>
-              <td>Hadir</td>
-              <td>Latihan coding blok dan memahami instruksi berurutan.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Reguler</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>4</td>
-              <td>1004</td>
-              <td>Aulia Rahma</td>
-              <td>Aulia</td>
-              <td>Coding Intermediate</td>
-              <td>15/12/2024</td>
-              <td>Hadir</td>
-              <td>Problem solving dasar dan penggunaan struktur logika sederhana.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Private</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>5</td>
-              <td>1005</td>
-              <td>Bima Santoso</td>
-              <td>Bima</td>
-              <td>Math Logic</td>
-              <td>16/12/2024</td>
-              <td>Hadir</td>
-              <td>Mengenal pola angka, urutan, dan latihan penalaran logis.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Reguler</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>6</td>
-              <td>1006</td>
-              <td>Citra Dewi Lestari</td>
-              <td>Citra</td>
-              <td>English Kids</td>
-              <td>17/12/2024</td>
-              <td>Hadir</td>
-              <td>Memperkenalkan diri dan menjawab pertanyaan sederhana.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Trial</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
-            </tr>
-
-            <tr>
-              <td>7</td>
-              <td>1007</td>
-              <td>Daffa Ramadhan</td>
-              <td>Daffa</td>
-              <td>Robotic 1</td>
-              <td>18/12/2024</td>
-              <td>Hadir</td>
-              <td>Mengenal roda, gear, dan merakit komponen sederhana.</td>
-              <td><span class="status-badge sent">Terkirim</span></td>
-              <td>Reguler</td>
-              <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-              </td>
+              <td colspan="11">Memuat data summary...</td>
             </tr>
           </tbody>
         </table>
@@ -178,27 +69,181 @@
   </div>
 
   <script>
-    function openSummaryDetail(button) {
-      const row = button.closest('tr');
+    let allSummaries = [];
 
-      const nickname = row.children[3].innerText;
-      const level = row.children[4].innerText;
-      const summary = row.children[7].innerText;
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadMentorSummaries();
 
-      const detailData = {
-        nickname: nickname,
-        level: level,
-        summary: summary,
-        sisaPertemuan: '',
-        masaExpired: ''
-      };
+      const searchInput = document.getElementById('searchInput');
+      const entrySelect = document.getElementById('entrySelect');
 
-      localStorage.setItem('summaryDetailData', JSON.stringify(detailData));
+      if (searchInput) {
+        searchInput.addEventListener('input', renderMentorSummaries);
+      }
 
-      window.location.href = 'detail-summary.html';
+      if (entrySelect) {
+        entrySelect.addEventListener('change', renderMentorSummaries);
+      }
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadMentorSummaries() {
+      try {
+        const response = await fetch('/api/summaries/mentor', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET MENTOR SUMMARIES ERROR:', result);
+          alert(result.message || 'Gagal mengambil data summary mentor.');
+          return;
+        }
+
+        allSummaries = result;
+        renderMentorSummaries();
+      } catch (error) {
+        console.error('LOAD MENTOR SUMMARIES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data summary mentor.');
+      }
+    }
+
+    function renderMentorSummaries() {
+      const tbody = document.getElementById('summaryBody');
+      const searchValue = document.getElementById('searchInput')?.value.toLowerCase() || '';
+      const limit = Number(document.getElementById('entrySelect')?.value || 4);
+
+      if (!tbody) return;
+
+      let filteredSummaries = allSummaries.filter(summary => {
+        const combinedText = [
+          summary.id,
+          summary.full_name,
+          summary.nickname,
+          summary.level_name,
+          summary.class_date,
+          summary.keterangan,
+          summary.summary_text,
+          summary.status,
+          summary.class_type
+        ].join(' ').toLowerCase();
+
+        return combinedText.includes(searchValue);
+      });
+
+      filteredSummaries = filteredSummaries.slice(0, limit);
+
+      if (filteredSummaries.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11">Belum ada data summary.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filteredSummaries.map((summary, index) => {
+        const isSent = summary.status === 'terkirim';
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${summary.id}</td>
+            <td>${escapeHtml(summary.full_name || '-')}</td>
+            <td>${escapeHtml(summary.nickname || '-')}</td>
+            <td>${escapeHtml(summary.level_name || '-')}</td>
+            <td>${formatDate(summary.class_date)}</td>
+            <td>${escapeHtml(summary.keterangan || '-')}</td>
+            <td>${escapeHtml(summary.summary_text || '-')}</td>
+            <td>
+              <span class="status-badge ${isSent ? 'sent' : 'pending'}">
+                ${isSent ? 'Terkirim' : 'Pending'}
+              </span>
+            </td>
+            <td>${formatClassType(summary.class_type)}</td>
+            <td>
+              ${!isSent ? `<button class="btn-delete" onclick="deleteSummary(${summary.id})">✖ Hapus</button>` : ''}
+              <button class="btn-detail" onclick="openSummaryDetail(${summary.id})">Detail</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteSummary(summaryId) {
+      const confirmed = confirm('Yakin ingin menghapus summary ini?');
+
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/summaries/${summaryId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menghapus summary.');
+          return;
+        }
+
+        alert(result.message || 'Summary berhasil dihapus.');
+        await loadMentorSummaries();
+      } catch (error) {
+        console.error('DELETE SUMMARY ERROR:', error);
+        alert('Terjadi kesalahan saat menghapus summary.');
+      }
+    }
+
+    function openSummaryDetail(summaryId) {
+      window.location.href = `detail-summary.html?id=${summaryId}`;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatClassType(classType) {
+      if (!classType) return '-';
+
+      if (classType === 'reguler') return 'Reguler';
+      if (classType === 'trial') return 'Trial';
+
+      return classType;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
   </script>
 
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

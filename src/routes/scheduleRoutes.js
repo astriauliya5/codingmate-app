@@ -19,14 +19,14 @@ router.post(
 router.put(
   '/routine/:id',
   verifyToken,
-  allowRoles('admin'),
+  allowRoles('admin', 'mentor'),
   scheduleController.updateRoutineSchedule
 );
 
 router.post(
   '/swap',
   verifyToken,
-  allowRoles('admin'),
+  allowRoles('admin', 'mentor'),
   scheduleController.swapSchedule
 );
 

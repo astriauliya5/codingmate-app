@@ -31,26 +31,31 @@
         </div>
 
         <div class="navigation">
-          <button>&larr; Previous Week</button>
-          <input type="text" placeholder="APRIL 2025" disabled />
-          <button>Next Week &rarr;</button>
+          <button type="button" id="prevWeekBtn">&larr; Previous Week</button>
+          <input type="text" id="weekLabel" placeholder="APRIL 2025" disabled />
+          <button type="button" id="nextWeekBtn">Next Week &rarr;</button>
         </div>
 
         <table class="jadwal-table jadwal-kosong-table">
           <thead>
             <tr>
               <th>Senin</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="0">dd/mm/yyyy</th>
+
               <th>Selasa</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="1">dd/mm/yyyy</th>
+
               <th>Rabu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="2">dd/mm/yyyy</th>
+
               <th>Kamis</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="3">dd/mm/yyyy</th>
+
               <th>Jumat</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="4">dd/mm/yyyy</th>
+
               <th>Sabtu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="5">dd/mm/yyyy</th>
             </tr>
           </thead>
 
@@ -67,21 +72,137 @@
   </div>
 
   <script>
-    const currentMentor = "mentor1";
+    let currentWeekStart = getMonday(new Date());
 
-    const savedEmptyBlocks = [
-      { day: 0, start: "9.30", end: "10.30", mentor: "mentor1" },
-      { day: 1, start: "12.00", end: "13.00", mentor: "mentor1" },
-      { day: 2, start: "12.30", end: "13.00", mentor: "mentor1" },
-      { day: 3, start: "11.30", end: "12.00", mentor: "mentor1" },
-      { day: 4, start: "13.30", end: "14.00", mentor: "mentor1" },
-      { day: 2, start: "17.00", end: "18.00", mentor: "mentor1" }
-    ];
+    // Key: YYYY-MM-DD|HH:MM
+    // Value: { id, available_date, start_time }
+    let initialEmptySlotMap = new Map();
+
+    const currentMentorClass = 'mentor1';
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      setupWeekNavigation();
+      renderWeekHeader();
+      generateJadwalRows(7, 19);
+      showInfoPopup();
+
+      await loadWeeklyMentorEmptySchedules();
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getCurrentUserId() {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        return currentUser?.id || null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function getMonday(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+
+      return d;
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    function addWeeks(date, weeks) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + (weeks * 7));
+      return result;
+    }
+
+    function toDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function normalizeDateValue(dateValue) {
+      if (!dateValue) return '';
+
+      if (typeof dateValue === 'string') {
+        return dateValue.slice(0, 10);
+      }
+
+      return toDateString(new Date(dateValue));
+    }
+
+    function formatDateHeader(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatMonthYear(date) {
+      const monthNames = [
+        'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+        'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+      ];
+
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function renderWeekHeader() {
+      const weekLabel = document.getElementById('weekLabel');
+      const dateHeads = document.querySelectorAll('.date-head');
+
+      if (weekLabel) {
+        weekLabel.value = formatMonthYear(currentWeekStart);
+      }
+
+      dateHeads.forEach((th, index) => {
+        const date = addDays(currentWeekStart, index);
+        th.textContent = formatDateHeader(date);
+      });
+    }
+
+    function setupWeekNavigation() {
+      const prevBtn = document.getElementById('prevWeekBtn');
+      const nextBtn = document.getElementById('nextWeekBtn');
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', async function () {
+          currentWeekStart = addWeeks(currentWeekStart, -1);
+          renderWeekHeader();
+          generateJadwalRows(7, 19);
+          await loadWeeklyMentorEmptySchedules();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', async function () {
+          currentWeekStart = addWeeks(currentWeekStart, 1);
+          renderWeekHeader();
+          generateJadwalRows(7, 19);
+          await loadWeeklyMentorEmptySchedules();
+        });
+      }
+    }
 
     function generateJadwalRows(startHour, endHour) {
       const tbody = document.getElementById('jadwal-body');
       const intervals = ['00', '30'];
       let rowIndex = 0;
+
+      tbody.innerHTML = '';
 
       for (let hour = startHour; hour <= endHour; hour++) {
         for (let i = 0; i < intervals.length; i++) {
@@ -112,36 +233,140 @@
           rowIndex++;
         }
       }
+
+      handleCheckboxChange();
     }
 
-    function timeToMinutes(timeStr) {
-      const [hour, minute] = timeStr.split('.').map(Number);
-      return hour * 60 + minute;
+    async function loadWeeklyMentorEmptySchedules() {
+      try {
+        initialEmptySlotMap = new Map();
+
+        await markFilledSchedulesIfAvailable();
+        await loadSavedEmptySchedules();
+      } catch (error) {
+        console.error('LOAD WEEKLY MENTOR EMPTY SCHEDULES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil jadwal kosong mentor.');
+      }
     }
 
-    function minutesToTime(minutes) {
-      const hour = Math.floor(minutes / 60);
-      const minute = minutes % 60;
-      return `${hour}.${minute === 0 ? '00' : minute}`;
+    async function markFilledSchedulesIfAvailable() {
+      try {
+        const weekStart = toDateString(currentWeekStart);
+        const mentorId = getCurrentUserId();
+
+        const response = await fetch(`/api/schedules/week?week_start=${weekStart}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        if (!response.ok) {
+          console.warn('Jadwal terisi tidak bisa dimuat. Validasi bentrok tetap diamankan backend.');
+          return;
+        }
+
+        const result = await response.json();
+
+        const schedules = Array.isArray(result) ? result : [];
+
+        const filteredSchedules = schedules.filter(schedule => {
+          if (!mentorId || !schedule.mentor_id) return true;
+          return Number(schedule.mentor_id) === Number(mentorId);
+        });
+
+        filteredSchedules.forEach(schedule => {
+          const day = Number(schedule.day_of_week);
+
+          if (day < 0 || day > 5) return;
+
+          const start = timeToMinutes(formatTimeForTable(schedule.start_time));
+          const end = timeToMinutes(formatTimeForTable(schedule.end_time));
+
+          document
+            .querySelectorAll(`.slot[data-day="${day}"]`)
+            .forEach(cell => {
+              const cellTime = timeToMinutes(cell.dataset.time);
+
+              if (cellTime >= start && cellTime < end) {
+                cell.classList.remove('default-slot');
+                cell.classList.add(`filled-${currentMentorClass}`);
+
+                const checkbox = cell.querySelector('.slot-checkbox');
+
+                if (checkbox) {
+                  checkbox.checked = false;
+                  checkbox.disabled = true;
+                  checkbox.title = 'Slot ini sudah terisi jadwal kelas';
+                }
+              }
+            });
+        });
+      } catch (error) {
+        console.warn('Gagal memuat jadwal terisi. Validasi bentrok tetap diamankan backend.', error);
+      }
     }
 
-    function paintSavedBlocks(blocks) {
-      blocks.forEach(block => {
-        const start = timeToMinutes(block.start);
-        const end = timeToMinutes(block.end);
+    async function loadSavedEmptySchedules() {
+      const weekStart = toDateString(currentWeekStart);
+      const mentorId = getCurrentUserId();
 
-        document
-          .querySelectorAll(`.slot[data-day="${block.day}"]`)
-          .forEach(cell => {
-            const cellTime = timeToMinutes(cell.dataset.time);
+      const response = await fetch(`/api/empty-schedules/week?week_start=${weekStart}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
 
-            if (cellTime >= start && cellTime < end) {
-              cell.classList.add(`empty-${block.mentor}`);
+      const result = await response.json();
 
-              const checkbox = cell.querySelector('.slot-checkbox');
-              if (checkbox) checkbox.checked = true;
-            }
-          });
+      if (!response.ok) {
+        console.error('GET MENTOR EMPTY SCHEDULES ERROR:', result);
+        alert(result.message || result.error || 'Gagal mengambil jadwal kosong mentor.');
+        return;
+      }
+
+      const schedules = Array.isArray(result) ? result : [];
+
+      const filteredSchedules = schedules.filter(schedule => {
+        if (!mentorId || !schedule.mentor_id) return true;
+        return Number(schedule.mentor_id) === Number(mentorId);
+      });
+
+      filteredSchedules.forEach(schedule => {
+        const dateValue = normalizeDateValue(schedule.available_date || schedule.date);
+        const startTime = formatTimeForApi(schedule.start_time);
+        const tableTime = formatTimeForTable(schedule.start_time);
+        const day = Number(schedule.day_of_week);
+
+        if (day < 0 || day > 5) return;
+
+        const key = makeSlotKey(dateValue, startTime);
+
+        initialEmptySlotMap.set(key, {
+          id: schedule.id,
+          available_date: dateValue,
+          start_time: startTime
+        });
+
+        const cell = document.querySelector(
+          `.slot[data-day="${day}"][data-time="${tableTime}"]`
+        );
+
+        if (!cell) return;
+
+        const checkbox = cell.querySelector('.slot-checkbox');
+
+        // Kalau slot sudah terisi kelas, jangan tandai sebagai kosong.
+        // Data lama yang bentrok bisa hilang saat user klik Simpan Perubahan.
+        if (checkbox && checkbox.disabled) {
+          return;
+        }
+
+        cell.classList.remove('default-slot');
+        cell.classList.add(`empty-${currentMentorClass}`);
+
+        if (checkbox) {
+          checkbox.checked = true;
+        }
       });
     }
 
@@ -150,75 +375,167 @@
         checkbox.addEventListener('change', function () {
           const cell = this.closest('.slot');
 
+          if (this.disabled) return;
+
           if (this.checked) {
-            cell.classList.add(`empty-${currentMentor}`);
+            cell.classList.remove('default-slot');
+            cell.classList.add(`empty-${currentMentorClass}`);
           } else {
-            cell.classList.remove(`empty-${currentMentor}`);
+            cell.classList.remove(`empty-${currentMentorClass}`);
+            cell.classList.add('default-slot');
           }
         });
       });
     }
 
-    function collectCheckedBlocks() {
-      const checkedSlots = [];
+    function collectCheckedSlotMap() {
+      const checkedSlotMap = new Map();
 
-      document.querySelectorAll('.slot-checkbox:checked').forEach(checkbox => {
-        checkedSlots.push({
-          day: Number(checkbox.dataset.day),
-          time: checkbox.dataset.time
+      document.querySelectorAll('.slot-checkbox:checked:not(:disabled)').forEach(checkbox => {
+        const day = Number(checkbox.dataset.day);
+        const date = toDateString(addDays(currentWeekStart, day));
+        const startTime = formatTimeForApi(checkbox.dataset.time);
+        const key = makeSlotKey(date, startTime);
+
+        checkedSlotMap.set(key, {
+          available_date: date,
+          start_time: startTime
         });
       });
 
-      const grouped = [];
+      return checkedSlotMap;
+    }
 
-      for (let day = 0; day < 6; day++) {
-        const daySlots = checkedSlots
-          .filter(slot => slot.day === day)
-          .map(slot => timeToMinutes(slot.time))
-          .sort((a, b) => a - b);
+    async function saveJadwalKosong() {
+      try {
+        const checkedSlotMap = collectCheckedSlotMap();
 
-        if (daySlots.length === 0) continue;
+        const slotsToCreate = [];
 
-        let start = daySlots[0];
-        let previous = daySlots[0];
+        checkedSlotMap.forEach((slot, key) => {
+          if (!initialEmptySlotMap.has(key)) {
+            slotsToCreate.push(slot);
+          }
+        });
 
-        for (let i = 1; i < daySlots.length; i++) {
-          const current = daySlots[i];
+        const idsToDelete = [];
 
-          if (current === previous + 30) {
-            previous = current;
-          } else {
-            grouped.push({
-              day: day,
-              start: minutesToTime(start),
-              end: minutesToTime(previous + 30),
-              mentor: currentMentor
+        initialEmptySlotMap.forEach((slot, key) => {
+          if (!checkedSlotMap.has(key)) {
+            idsToDelete.push(slot.id);
+          }
+        });
+
+        if (slotsToCreate.length === 0 && idsToDelete.length === 0) {
+          alert('Tidak ada perubahan jadwal kosong.');
+          return;
+        }
+
+        let insertedCount = 0;
+        let skippedCount = 0;
+
+        if (slotsToCreate.length > 0) {
+          const createResponse = await fetch('/api/empty-schedules', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({
+              slots: slotsToCreate
+            })
+          });
+
+          const createResult = await createResponse.json();
+
+          if (!createResponse.ok) {
+            console.error('CREATE EMPTY SCHEDULE ERROR:', createResult);
+            alert(createResult.message || createResult.error || 'Gagal menyimpan jadwal kosong.');
+            return;
+          }
+
+          insertedCount = Number(createResult.inserted_count || 0);
+          skippedCount = Number(createResult.skipped_count || 0);
+        }
+
+        if (idsToDelete.length > 0) {
+          for (const id of idsToDelete) {
+            const deleteResponse = await fetch(`/api/empty-schedules/${id}`, {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${getToken()}`
+              }
             });
 
-            start = current;
-            previous = current;
+            const deleteResult = await deleteResponse.json();
+
+            if (!deleteResponse.ok) {
+              console.error('DELETE EMPTY SCHEDULE ERROR:', deleteResult);
+              alert(deleteResult.message || deleteResult.error || 'Gagal menghapus jadwal kosong.');
+              return;
+            }
           }
         }
 
-        grouped.push({
-          day: day,
-          start: minutesToTime(start),
-          end: minutesToTime(previous + 30),
-          mentor: currentMentor
-        });
-      }
+        let message = 'Perubahan jadwal kosong berhasil disimpan.';
 
-      return grouped;
+        if (slotsToCreate.length > 0) {
+          message += `\nBerhasil ditambahkan: ${insertedCount}`;
+          message += `\nDilewati karena bentrok/duplikat: ${skippedCount}`;
+        }
+
+        if (idsToDelete.length > 0) {
+          message += `\nBerhasil dihapus: ${idsToDelete.length}`;
+        }
+
+        alert(message);
+
+        generateJadwalRows(7, 19);
+        await loadWeeklyMentorEmptySchedules();
+      } catch (error) {
+        console.error('SAVE JADWAL KOSONG ERROR:', error);
+        alert('Terjadi kesalahan saat menyimpan perubahan jadwal kosong.');
+      }
     }
 
-    function saveJadwalKosong() {
-      const result = collectCheckedBlocks();
+    function makeSlotKey(date, time) {
+      return `${date}|${time}`;
+    }
 
-      localStorage.setItem('jadwalKosongMentor', JSON.stringify(result));
+    function formatTimeForApi(timeValue) {
+      if (!timeValue) return '';
 
-      console.log('Data jadwal kosong mentor:', result);
+      const timeString = String(timeValue);
 
-      alert('Perubahan jadwal kosong berhasil disimpan sementara.');
+      if (timeString.includes(':')) {
+        const [hour, minute] = timeString.split(':');
+        return `${String(Number(hour)).padStart(2, '0')}:${minute}`;
+      }
+
+      if (timeString.includes('.')) {
+        const [hour, minute] = timeString.split('.');
+        return `${String(Number(hour)).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      }
+
+      return timeString;
+    }
+
+    function formatTimeForTable(timeValue) {
+      if (!timeValue) return '';
+
+      const timeString = String(timeValue);
+
+      if (timeString.includes(':')) {
+        const [hour, minute] = timeString.split(':');
+        return `${Number(hour)}.${minute}`;
+      }
+
+      return timeString;
+    }
+
+    function timeToMinutes(timeStr) {
+      const [hour, minute] = String(timeStr).split('.').map(Number);
+      return (hour * 60) + minute;
     }
 
     function showInfoPopup() {
@@ -232,13 +549,9 @@
         popup.classList.remove('show');
       }, 4500);
     }
-
-    generateJadwalRows(7, 19);
-    paintSavedBlocks(savedEmptyBlocks);
-    handleCheckboxChange();
-    showInfoPopup();
   </script>
 
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

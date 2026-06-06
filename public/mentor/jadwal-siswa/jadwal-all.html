@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jadwal Kosong Mentor</title>
+  <title>Jadwal All Mentor</title>
   <link rel="stylesheet" href="jadwal-mentor.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
 </head>
@@ -26,31 +26,32 @@
       </div>
 
       <div class="jadwal-wrapper">
-        <div id="info-popup" class="info-popup">
-          💡 Centang untuk menandai jadwal kosong anda
-        </div>
-
         <div class="navigation">
-          <button>&larr; Previous Week</button>
-          <input type="text" placeholder="APRIL 2025" disabled />
-          <button>Next Week &rarr;</button>
+          <button type="button" id="prevWeekBtn">&larr; Previous Week</button>
+          <input type="text" id="weekLabel" placeholder="APRIL 2025" disabled />
+          <button type="button" id="nextWeekBtn">Next Week &rarr;</button>
         </div>
 
         <table class="jadwal-table jadwal-kosong-table">
           <thead>
             <tr>
               <th>Senin</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="0">dd/mm/yyyy</th>
+
               <th>Selasa</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="1">dd/mm/yyyy</th>
+
               <th>Rabu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="2">dd/mm/yyyy</th>
+
               <th>Kamis</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="3">dd/mm/yyyy</th>
+
               <th>Jumat</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="4">dd/mm/yyyy</th>
+
               <th>Sabtu</th>
-              <th>dd/mm/yyyy</th>
+              <th class="date-head" data-day="5">dd/mm/yyyy</th>
             </tr>
           </thead>
 
@@ -60,100 +61,318 @@
     </main>
   </div>
 
-    <script>
-    const currentMentor = "mentor1";
+  <script>
+    let currentWeekStart = getMonday(new Date());
 
-    const filledBlocks = [
-        { day: 1, start: "8.00", end: "9.00", mentor: "mentor1", label: "Nama Siswa" },
-        { day: 2, start: "12.30", end: "13.00", mentor: "mentor1", label: "Nama Siswa" },
-        { day: 2, start: "17.00", end: "18.00", mentor: "mentor1", label: "Nama Siswa" }
-    ];
+    // Untuk mentor login, warna cukup pakai mentor1.
+    const currentMentorClass = 'mentor1';
 
-    const emptyBlocks = [
-        { day: 0, start: "9.30", end: "11.00", mentor: "mentor1" },
-        { day: 0, start: "15.00", end: "18.00", mentor: "mentor1" },
-        { day: 1, start: "12.00", end: "15.00", mentor: "mentor1" },
-        { day: 3, start: "16.00", end: "18.30", mentor: "mentor1" },
-        { day: 5, start: "8.00", end: "11.00", mentor: "mentor1" }
-    ];
+    document.addEventListener('DOMContentLoaded', async function () {
+      setupWeekNavigation();
+      renderWeekHeader();
+      generateJadwalRows(7, 19);
+      await loadMentorAllSchedules();
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getCurrentUserId() {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        return currentUser?.id || null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function getMonday(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+
+      // JS: Minggu = 0, Senin = 1
+      // Sistem tabel: Senin = 0 sampai Sabtu = 5
+      const diff = day === 0 ? -6 : 1 - day;
+
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+
+      return d;
+    }
+
+    function addDays(date, days) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    }
+
+    function addWeeks(date, weeks) {
+      const result = new Date(date);
+      result.setDate(result.getDate() + (weeks * 7));
+      return result;
+    }
+
+    function toDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatDateHeader(date) {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatMonthYear(date) {
+      const monthNames = [
+        'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+        'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+      ];
+
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    function renderWeekHeader() {
+      const weekLabel = document.getElementById('weekLabel');
+      const dateHeads = document.querySelectorAll('.date-head');
+
+      if (weekLabel) {
+        weekLabel.value = formatMonthYear(currentWeekStart);
+      }
+
+      dateHeads.forEach((th, index) => {
+        const date = addDays(currentWeekStart, index);
+        th.textContent = formatDateHeader(date);
+      });
+    }
+
+    function setupWeekNavigation() {
+      const prevBtn = document.getElementById('prevWeekBtn');
+      const nextBtn = document.getElementById('nextWeekBtn');
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', async function () {
+          currentWeekStart = addWeeks(currentWeekStart, -1);
+          renderWeekHeader();
+          generateJadwalRows(7, 19);
+          await loadMentorAllSchedules();
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', async function () {
+          currentWeekStart = addWeeks(currentWeekStart, 1);
+          renderWeekHeader();
+          generateJadwalRows(7, 19);
+          await loadMentorAllSchedules();
+        });
+      }
+    }
 
     function generateJadwalRows(startHour, endHour) {
-        const tbody = document.getElementById('jadwal-body');
-        const intervals = ['00', '30'];
-        let rowIndex = 0;
+      const tbody = document.getElementById('jadwal-body');
+      const intervals = ['00', '30'];
+      let rowIndex = 0;
 
-        for (let hour = startHour; hour <= endHour; hour++) {
+      tbody.innerHTML = '';
+
+      for (let hour = startHour; hour <= endHour; hour++) {
         for (let i = 0; i < intervals.length; i++) {
-            const jam = `${hour}.${intervals[i]}`;
+          const jam = `${hour}.${intervals[i]}`;
 
-            if (hour === endHour && intervals[i] === '30') break;
+          if (hour === endHour && intervals[i] === '30') break;
 
-            const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
+          const rowColorClass = rowIndex % 2 === 0 ? 'row-yellow' : 'row-white';
 
-            const row = document.createElement('tr');
-            row.classList.add('main-row', rowColorClass);
+          const row = document.createElement('tr');
+          row.classList.add('main-row', rowColorClass);
 
-            for (let day = 0; day < 6; day++) {
+          for (let day = 0; day < 6; day++) {
             row.innerHTML += `
-                <td class="time-cell">${jam}</td>
-                <td class="slot default-slot" data-day="${day}" data-time="${jam}"></td>
+              <td class="time-cell">${jam}</td>
+              <td class="slot default-slot" data-day="${day}" data-time="${jam}"></td>
             `;
-            }
+          }
 
-            tbody.appendChild(row);
-            rowIndex++;
+          tbody.appendChild(row);
+          rowIndex++;
         }
+      }
+    }
+
+    async function loadMentorAllSchedules() {
+      try {
+        generateJadwalRows(7, 19);
+
+        const weekStart = toDateString(currentWeekStart);
+        const token = getToken();
+
+        const [filledResponse, emptyResponse] = await Promise.all([
+          fetch(`/api/schedules/week?week_start=${weekStart}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }),
+          fetch(`/api/empty-schedules/week?week_start=${weekStart}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
+        ]);
+
+        const filledResult = await filledResponse.json();
+        const emptyResult = await emptyResponse.json();
+
+        if (!filledResponse.ok) {
+          console.error('GET MENTOR FILLED SCHEDULES ERROR:', filledResult);
+          alert(filledResult.message || filledResult.error || 'Gagal mengambil jadwal siswa mentor.');
+          return;
         }
+
+        if (!emptyResponse.ok) {
+          console.error('GET MENTOR EMPTY SCHEDULES ERROR:', emptyResult);
+          alert(emptyResult.message || emptyResult.error || 'Gagal mengambil jadwal kosong mentor.');
+          return;
+        }
+
+        const mentorId = getCurrentUserId();
+
+        const filledSchedules = Array.isArray(filledResult) ? filledResult : [];
+        const emptySchedules = Array.isArray(emptyResult) ? emptyResult : [];
+
+        const mentorFilledSchedules = filledSchedules.filter(schedule => {
+          if (!mentorId || !schedule.mentor_id) return true;
+          return Number(schedule.mentor_id) === Number(mentorId);
+        });
+
+        const mentorEmptySchedules = emptySchedules.filter(schedule => {
+          if (!mentorId || !schedule.mentor_id) return true;
+          return Number(schedule.mentor_id) === Number(mentorId);
+        });
+
+        const emptyBlocks = convertEmptySchedulesToBlocks(mentorEmptySchedules);
+        const filledBlocks = convertFilledSchedulesToBlocks(mentorFilledSchedules);
+
+        // Jadwal kosong dipaint dulu.
+        paintEmptyBlocks(emptyBlocks);
+
+        // Jadwal terisi dipaint setelahnya supaya menang jika ada data lama yang overlap.
+        paintFilledBlocks(filledBlocks);
+      } catch (error) {
+        console.error('LOAD MENTOR ALL SCHEDULES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil jadwal all mentor.');
+      }
+    }
+
+    function convertFilledSchedulesToBlocks(schedules) {
+      return schedules
+        .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+        .sort((a, b) => {
+          if (String(a.date) !== String(b.date)) {
+            return String(a.date).localeCompare(String(b.date));
+          }
+
+          return String(a.start_time).localeCompare(String(b.start_time));
+        })
+        .map(schedule => {
+          return {
+            day: Number(schedule.day_of_week),
+            start: formatTimeForTable(schedule.start_time),
+            end: formatTimeForTable(schedule.end_time),
+            mentor: currentMentorClass,
+            label: schedule.nickname || schedule.student_name || schedule.full_name || 'Nama Siswa'
+          };
+        });
+    }
+
+    function convertEmptySchedulesToBlocks(schedules) {
+      return schedules
+        .filter(schedule => Number(schedule.day_of_week) >= 0 && Number(schedule.day_of_week) <= 5)
+        .sort((a, b) => {
+          if (String(a.date) !== String(b.date)) {
+            return String(a.date).localeCompare(String(b.date));
+          }
+
+          return String(a.start_time).localeCompare(String(b.start_time));
+        })
+        .map(schedule => {
+          return {
+            day: Number(schedule.day_of_week),
+            start: formatTimeForTable(schedule.start_time),
+            end: formatTimeForTable(schedule.end_time),
+            mentor: currentMentorClass
+          };
+        });
+    }
+
+    function formatTimeForTable(timeValue) {
+      if (!timeValue) return '';
+
+      const timeString = String(timeValue);
+
+      if (timeString.includes(':')) {
+        const [hour, minute] = timeString.split(':');
+        return `${Number(hour)}.${minute}`;
+      }
+
+      return timeString;
     }
 
     function timeToMinutes(timeStr) {
-        const [hour, minute] = timeStr.split('.').map(Number);
-        return hour * 60 + minute;
+      const [hour, minute] = String(timeStr).split('.').map(Number);
+      return (hour * 60) + minute;
     }
 
-    function paintBlocks(blocks, type) {
-        blocks.forEach(block => {
+    function paintEmptyBlocks(blocks) {
+      blocks.forEach(block => {
         const start = timeToMinutes(block.start);
         const end = timeToMinutes(block.end);
 
         document
-            .querySelectorAll(`.slot[data-day="${block.day}"]`)
-            .forEach(cell => {
+          .querySelectorAll(`.slot[data-day="${block.day}"]`)
+          .forEach(cell => {
             const cellTime = timeToMinutes(cell.dataset.time);
 
             if (cellTime >= start && cellTime < end) {
-                cell.classList.remove('default-slot');
-
-                if (type === 'filled') {
-                cell.classList.remove('empty-mentor1', 'empty-mentor2');
-                }
-
-                cell.classList.add(`${type}-${block.mentor}`);
+              cell.classList.remove('default-slot');
+              cell.classList.add(`empty-${block.mentor}`);
+              cell.textContent = '';
             }
-            });
-
-        if (type === 'filled') {
-            const firstCell = document.querySelector(
-            `.slot[data-day="${block.day}"][data-time="${block.start}"]`
-            );
-
-            if (firstCell && block.label) {
-            firstCell.textContent = block.label;
-            firstCell.classList.add('student-label');
-            }
-        }
-        });
+          });
+      });
     }
 
-    generateJadwalRows(7, 19);
+    function paintFilledBlocks(blocks) {
+      blocks.forEach(block => {
+        const start = timeToMinutes(block.start);
+        const end = timeToMinutes(block.end);
 
-    const mentorEmptyBlocks = emptyBlocks.filter(block => block.mentor === currentMentor);
-    const mentorFilledBlocks = filledBlocks.filter(block => block.mentor === currentMentor);
+        document
+          .querySelectorAll(`.slot[data-day="${block.day}"]`)
+          .forEach(cell => {
+            const cellTime = timeToMinutes(cell.dataset.time);
 
-    paintBlocks(mentorEmptyBlocks, 'empty');
-    paintBlocks(mentorFilledBlocks, 'filled');
-    </script>
+            if (cellTime >= start && cellTime < end) {
+              cell.classList.remove('default-slot', 'empty-mentor1', 'empty-mentor2');
+              cell.classList.add(`filled-${block.mentor}`);
 
+              if (cell.dataset.time === block.start) {
+                cell.textContent = block.label;
+                cell.classList.add('student-label');
+              }
+            }
+          });
+      });
+    }
+  </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

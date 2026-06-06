@@ -7,18 +7,22 @@
   <link rel="stylesheet" href="data-siswa.css" />
   <link rel="stylesheet" href="/assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
+
     <main class="main-content">
       <h1>Pendaftaran Siswa Baru</h1>
+
       <button class="btn" onclick="window.location.href='data-siswa.html'">Back</button>
+
       <form id="student-form">
         <div class="form-outer">
           <div class="form-group">
             <label>Full Name</label>
             <input type="text" id="full-name" name="full_name" placeholder="Value" required>
-          </div>        
+          </div>
 
           <div class="form-group">
             <label>Nickname</label>
@@ -27,7 +31,15 @@
 
           <div class="form-group">
             <label>Foto Siswa</label>
-            <input type="file" id="photo" name="photo">
+            <input type="file" id="photo" name="photo" accept="image/*">
+            <div id="photo-preview-wrapper" style="margin-top: 10px; display: none;">
+              <img
+                id="photo-preview"
+                src=""
+                alt="Preview Foto Siswa"
+                style="width: 120px; height: 120px; object-fit: cover; border: 1px solid #ccc; border-radius: 8px;"
+              >
+            </div>
           </div>
 
           <div class="form-group">
@@ -103,135 +115,166 @@
       </form>
     </main>
   </div>
+
   <script src="/assets/js/auth-guard.js"></script>
+
   <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const studentForm = document.getElementById('student-form');
-    const bornDateInput = document.getElementById('born-date');
-    const joinedDateInput = document.getElementById('joined-date');
-    const ageInput = document.getElementById('age');
-    const durationInput = document.getElementById('duration');
+    document.addEventListener('DOMContentLoaded', function () {
+      const studentForm = document.getElementById('student-form');
+      const bornDateInput = document.getElementById('born-date');
+      const joinedDateInput = document.getElementById('joined-date');
+      const ageInput = document.getElementById('age');
+      const durationInput = document.getElementById('duration');
+      const photoInput = document.getElementById('photo');
+      const photoPreviewWrapper = document.getElementById('photo-preview-wrapper');
+      const photoPreview = document.getElementById('photo-preview');
 
-    function getValue(id) {
-      const element = document.getElementById(id);
-      return element ? element.value.trim() : '';
-    }
-
-    function calculateAge(bornDate) {
-      if (!bornDate) return '';
-
-      const today = new Date();
-      const birth = new Date(bornDate);
-
-      let age = today.getFullYear() - birth.getFullYear();
-      const monthDiff = today.getMonth() - birth.getMonth();
-
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birth.getDate())
-      ) {
-        age--;
+      function getValue(id) {
+        const element = document.getElementById(id);
+        return element ? element.value.trim() : '';
       }
 
-      return age;
-    }
+      function calculateAge(bornDate) {
+        if (!bornDate) return '';
 
-    function calculateDuration(joinedDate) {
-      if (!joinedDate) return '';
+        const today = new Date();
+        const birth = new Date(bornDate);
 
-      const today = new Date();
-      const joined = new Date(joinedDate);
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
 
-      let years = today.getFullYear() - joined.getFullYear();
-      let months = today.getMonth() - joined.getMonth();
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birth.getDate())
+        ) {
+          age--;
+        }
 
-      if (today.getDate() < joined.getDate()) {
-        months--;
+        return age;
       }
 
-      if (months < 0) {
-        years--;
-        months += 12;
+      function calculateDuration(joinedDate) {
+        if (!joinedDate) return '';
+
+        const today = new Date();
+        const joined = new Date(joinedDate);
+
+        let years = today.getFullYear() - joined.getFullYear();
+        let months = today.getMonth() - joined.getMonth();
+
+        if (today.getDate() < joined.getDate()) {
+          months--;
+        }
+
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+
+        if (years <= 0 && months <= 0) {
+          return 'Kurang dari 1 bulan';
+        }
+
+        if (years <= 0) {
+          return `${months} bulan`;
+        }
+
+        if (months <= 0) {
+          return `${years} tahun`;
+        }
+
+        return `${years} tahun ${months} bulan`;
       }
 
-      if (years <= 0 && months <= 0) {
-        return 'Kurang dari 1 bulan';
-      }
+      bornDateInput.addEventListener('change', function () {
+        ageInput.value = calculateAge(this.value);
+      });
 
-      if (years <= 0) {
-        return `${months} bulan`;
-      }
+      joinedDateInput.addEventListener('change', function () {
+        durationInput.value = calculateDuration(this.value);
+      });
 
-      if (months <= 0) {
-        return `${years} tahun`;
-      }
+      photoInput.addEventListener('change', function () {
+        const file = this.files[0];
 
-      return `${years} tahun ${months} bulan`;
-    }
-
-    bornDateInput.addEventListener('change', function () {
-      ageInput.value = calculateAge(this.value);
-    });
-
-    joinedDateInput.addEventListener('change', function () {
-      durationInput.value = calculateDuration(this.value);
-    });
-
-    studentForm.addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      const studentData = {
-        full_name: getValue('full-name'),
-        nickname: getValue('nickname'),
-        parent_name: getValue('parent-name'),
-        born_date: getValue('born-date') || null,
-        age: getValue('age') || null,
-        joined_date: getValue('joined-date') || null,
-        duration: getValue('duration'),
-        initial_class: getValue('initial-class'),
-        current_class: getValue('current-class'),
-        phone: getValue('phone'),
-        city: getValue('city'),
-        school: getValue('school'),
-        address: getValue('address'),
-        email: getValue('email'),
-        gmaps: getValue('gmaps'),
-        photo: document.getElementById('photo').files[0]
-          ? document.getElementById('photo').files[0].name
-          : null
-      };
-
-      if (!studentData.full_name) {
-        alert('Full Name wajib diisi.');
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/students', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(studentData)
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          alert(result.message || 'Gagal menambahkan data siswa.');
+        if (!file) {
+          photoPreviewWrapper.style.display = 'none';
+          photoPreview.src = '';
           return;
         }
 
-        alert('Data siswa berhasil ditambahkan.');
-        window.location.href = '/admin/data-siswa/data-siswa.html';
-      } catch (error) {
-        console.error('CREATE STUDENT ERROR:', error);
-        alert('Terjadi kesalahan saat menyimpan data siswa.');
-      }
+        if (!file.type.startsWith('image/')) {
+          alert('File harus berupa gambar.');
+          this.value = '';
+          photoPreviewWrapper.style.display = 'none';
+          photoPreview.src = '';
+          return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+
+        photoPreview.src = previewUrl;
+        photoPreviewWrapper.style.display = 'block';
+      });
+
+      studentForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const fullName = getValue('full-name');
+
+        if (!fullName) {
+          alert('Full Name wajib diisi.');
+          return;
+        }
+
+        const formData = new FormData();
+
+        formData.append('full_name', fullName);
+        formData.append('nickname', getValue('nickname'));
+        formData.append('parent_name', getValue('parent-name'));
+        formData.append('born_date', getValue('born-date'));
+        formData.append('age', getValue('age'));
+        formData.append('joined_date', getValue('joined-date'));
+        formData.append('duration', getValue('duration'));
+        formData.append('initial_class', getValue('initial-class'));
+        formData.append('current_class', getValue('current-class'));
+        formData.append('phone', getValue('phone'));
+        formData.append('city', getValue('city'));
+        formData.append('school', getValue('school'));
+        formData.append('address', getValue('address'));
+        formData.append('email', getValue('email'));
+        formData.append('gmaps', getValue('gmaps'));
+
+        if (photoInput.files.length > 0) {
+          formData.append('photo', photoInput.files[0]);
+        }
+
+        try {
+          const response = await fetch('/api/students', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(result.message || 'Gagal menambahkan data siswa.');
+            return;
+          }
+
+          alert(result.message || 'Data siswa berhasil ditambahkan.');
+          window.location.href = '/admin/data-siswa/data-siswa.html';
+        } catch (error) {
+          console.error('CREATE STUDENT ERROR:', error);
+          alert('Terjadi kesalahan saat menyimpan data siswa.');
+        }
+      });
     });
-  });
-</script>
+  </script>
+
   <script src="/assets/js/sidebar.js"></script>
 </body>
 </html>

@@ -10,141 +10,265 @@
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
-    <main class="main-content">
-    <h1>Summary Class</h1>
 
-    <div class="summary-top">
+    <main class="main-content">
+      <h1>Summary Class</h1>
+
+      <div class="summary-top">
         <div class="entry-box">
-        <label>
+          <label>
             Tampilkan
-            <select>
-            <option>4</option>
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
+            <select id="entrySelect">
+              <option>4</option>
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
             </select>
             entri
-        </label>
+          </label>
         </div>
 
         <div class="search-box">
-        <input type="text" placeholder="🔍 Search">
+          <input type="text" id="searchInput" placeholder="🔍 Search">
         </div>
-    </div>
+      </div>
 
-    <div class="summary-table-wrapper">
+      <div class="summary-table-wrapper">
         <table class="summary-table">
-        <thead>
+          <thead>
             <tr>
-            <th>No.</th>
-            <th>Id</th>
-            <th>Mentor</th>
-            <th>Full Name</th>
-            <th>Nickname</th>
-            <th>Level</th>
-            <th>Tanggal Kelas</th>
-            <th>Keterangan</th>
-            <th>Summary</th>
-            <th>Status</th>
-            <th>Jenis Kelas</th>
-            <th>Aksi</th>
+              <th>No.</th>
+              <th>Id</th>
+              <th>Mentor</th>
+              <th>Full Name</th>
+              <th>Nickname</th>
+              <th>Level</th>
+              <th>Tanggal Kelas</th>
+              <th>Keterangan</th>
+              <th>Summary</th>
+              <th>Status</th>
+              <th>Jenis Kelas</th>
+              <th>Aksi</th>
             </tr>
-        </thead>
+          </thead>
 
-        <tbody>
+          <tbody id="summaryBody">
             <tr>
-            <td>1</td>
-            <td>1001</td>
-            <td>Irma</td>
-            <td>Astri Auliya Ardini</td>
-            <td>Astri</td>
-            <td>Level 1</td>
-            <td>12/12/2024</td>
-            <td>bagus</td>
-            <td>mengkalibrasi angka</td>
-            <td><input type="checkbox" checked></td>
-            <td>Trial</td>
-            <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-            </td>
+              <td colspan="12">Memuat data summary...</td>
             </tr>
-
-            <tr>
-            <td>2</td>
-            <td>1002</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td><input type="checkbox" checked></td>
-            <td>value</td>
-            <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-            </td>
-            </tr>
-
-            <tr>
-            <td>3</td>
-            <td>2001</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td><input type="checkbox" checked></td>
-            <td>value</td>
-            <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-            </td>
-            </tr>
-
-            <tr>
-            <td>4</td>
-            <td>2002</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td>value</td>
-            <td><input type="checkbox"></td>
-            <td>value</td>
-            <td>
-                <button class="btn-detail" onclick="openSummaryDetail(this)">Detail</button>
-            </td>
-            </tr>
-        </tbody>
+          </tbody>
         </table>
-    </div>
+      </div>
     </main>
   </div>
+
+  <script>
+    let allSummaries = [];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadSummaries();
+
+      const searchInput = document.getElementById('searchInput');
+      const entrySelect = document.getElementById('entrySelect');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', renderSummaries);
+      }
+
+      if (entrySelect) {
+        entrySelect.addEventListener('change', renderSummaries);
+      }
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadSummaries() {
+      try {
+        const response = await fetch('/api/summaries', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET SUMMARIES ERROR:', result);
+          alert(result.message || 'Gagal mengambil data summary.');
+          return;
+        }
+
+        allSummaries = result;
+        renderSummaries();
+      } catch (error) {
+        console.error('LOAD SUMMARIES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data summary.');
+      }
+    }
+
+    function renderSummaries() {
+      const tbody = document.getElementById('summaryBody');
+      const searchValue = document.getElementById('searchInput')?.value.toLowerCase() || '';
+      const limit = Number(document.getElementById('entrySelect')?.value || 4);
+
+      if (!tbody) return;
+
+      let filteredSummaries = allSummaries.filter(summary => {
+        const combinedText = [
+          summary.id,
+          summary.mentor_name,
+          summary.full_name,
+          summary.nickname,
+          summary.level_name,
+          summary.class_date,
+          summary.keterangan,
+          summary.summary_text,
+          summary.status,
+          summary.class_type
+        ].join(' ').toLowerCase();
+
+        return combinedText.includes(searchValue);
+      });
+
+      filteredSummaries = filteredSummaries.slice(0, limit);
+
+      if (filteredSummaries.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="12">Belum ada data summary.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filteredSummaries.map((summary, index) => {
+        const isApproved = summary.status === 'terkirim';
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${summary.id}</td>
+            <td>${escapeHtml(summary.mentor_name || '-')}</td>
+            <td>${escapeHtml(summary.full_name || '-')}</td>
+            <td>${escapeHtml(summary.nickname || '-')}</td>
+            <td>${escapeHtml(summary.level_name || '-')}</td>
+            <td>${formatDate(summary.class_date)}</td>
+            <td>${escapeHtml(summary.keterangan || '-')}</td>
+            <td>${escapeHtml(summary.summary_text || '-')}</td>
+            <td>
+              <input
+                type="checkbox"
+                ${isApproved ? 'checked disabled' : ''}
+                onchange="approveSummary(${summary.id}, this)"
+              >
+            </td>
+            <td>${formatClassType(summary.class_type)}</td>
+            <td>
+              <button class="btn-detail" onclick="openSummaryDetail(${summary.id})">Detail</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveSummary(summaryId, checkbox) {
+      const confirmed = confirm(
+        'Summary yang sudah disetujui tidak bisa diubah lagi dan kredit siswa akan berkurang 1. Lanjutkan?'
+      );
+
+      if (!confirmed) {
+        checkbox.checked = false;
+        return;
+      }
+
+      try {
+        checkbox.disabled = true;
+
+        const response = await fetch(`/api/summaries/${summaryId}/approve`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menyetujui summary.');
+          checkbox.checked = false;
+          checkbox.disabled = false;
+          return;
+        }
+
+        alert(result.message || 'Summary berhasil disetujui.');
+
+        const targetSummary = allSummaries.find(summary => Number(summary.id) === Number(summaryId));
+
+        if (targetSummary) {
+          targetSummary.status = 'terkirim';
+
+          if (
+            typeof targetSummary.remaining_credit !== 'undefined' &&
+            targetSummary.remaining_credit !== null
+          ) {
+            targetSummary.remaining_credit = Math.max(Number(targetSummary.remaining_credit) - 1, 0);
+          }
+        }
+
+        checkbox.checked = true;
+        checkbox.disabled = true;
+
+        renderSummaries();
+      } catch (error) {
+        console.error('APPROVE SUMMARY ERROR:', error);
+        alert('Terjadi kesalahan saat menyetujui summary.');
+        checkbox.checked = false;
+        checkbox.disabled = false;
+      }
+    }
+
+    function openSummaryDetail(summaryId) {
+      window.location.href = `detail-summary.html?id=${summaryId}`;
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatClassType(classType) {
+      if (!classType) return '-';
+
+      if (classType === 'reguler') return 'Reguler';
+      if (classType === 'trial') return 'Trial';
+
+      return classType;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
+  <script src="../../assets/js/sidebar.js"></script>
 </body>
-<script>
-  function openSummaryDetail(button) {
-    const row = button.closest('tr');
-
-    const nickname = row.children[4].innerText;
-    const level = row.children[5].innerText;
-    const summary = row.children[8].innerText;
-
-    const detailData = {
-      nickname: nickname,
-      level: level,
-      summary: summary,
-      sisaPertemuan: '',
-      masaExpired: ''
-    };
-
-    localStorage.setItem('summaryDetailData', JSON.stringify(detailData));
-
-    window.location.href = 'detail-summary.html';
-  }
-</script>
-<script src="../../assets/js/sidebar.js"></script>
 </html>

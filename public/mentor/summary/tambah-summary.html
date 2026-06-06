@@ -20,49 +20,40 @@
       <form class="summary-form" id="summaryForm">
         <div class="form-group">
           <label for="nama-siswa">Nama Siswa</label>
-          <select id="nama-siswa" name="namaSiswa">
-            <option value="">Value</option>
-            <option value="Astri Auliya Ardini">Astri Auliya Ardini</option>
-            <option value="Gabriel Jason Iskandar">Gabriel Jason Iskandar</option>
-            <option value="Rafael Kevin Iskandar">Rafael Kevin Iskandar</option>
-            <option value="Aulia Rahma">Aulia Rahma</option>
+          <select id="nama-siswa" name="namaSiswa" required>
+            <option value="">Pilih siswa</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="level">Level</label>
-          <select id="level" name="level">
-            <option value="">Value</option>
-            <option value="Level 1">Level 1</option>
-            <option value="Robotic 1">Robotic 1</option>
-            <option value="Robotic 2">Robotic 2</option>
-            <option value="Coding Intermediate">Coding Intermediate</option>
+          <select id="level" name="level" required>
+            <option value="">Pilih level</option>
           </select>
         </div>
 
         <div class="form-group form-date">
           <label for="tanggal-kelas">Tanggal Kelas</label>
-          <input type="date" id="tanggal-kelas" name="tanggalKelas" />
+          <input type="date" id="tanggal-kelas" name="tanggalKelas" required />
         </div>
 
         <div class="form-group">
           <label for="jenis-kelas">Jenis Kelas</label>
-          <select id="jenis-kelas" name="jenisKelas">
-            <option value="">Value</option>
-            <option value="Trial">Trial</option>
-            <option value="Reguler">Reguler</option>
-            <option value="Private">Private</option>
+          <select id="jenis-kelas" name="jenisKelas" required>
+            <option value="">Pilih jenis kelas</option>
+            <option value="reguler">Reguler</option>
+            <option value="trial">Trial</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="detail-summary">Detail Summary</label>
-          <textarea id="detail-summary" name="detailSummary" placeholder="Value"></textarea>
+          <textarea id="detail-summary" name="detailSummary" placeholder="Isi detail pembelajaran hari ini" required></textarea>
         </div>
 
         <div class="form-group">
           <label for="keterangan">Keterangan</label>
-          <input type="text" id="keterangan" name="keterangan" placeholder="Value" />
+          <input type="text" id="keterangan" name="keterangan" placeholder="Contoh: Hadir / Izin / Bagus" />
         </div>
 
         <div class="form-actions">
@@ -74,26 +65,165 @@
   </div>
 
   <script>
-    document.getElementById('summaryForm').addEventListener('submit', function (event) {
+    let summaryOptions = [];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadSummaryOptions();
+
+      const studentSelect = document.getElementById('nama-siswa');
+
+      studentSelect.addEventListener('change', function () {
+        renderLevelOptions(this.value);
+      });
+
+      document.getElementById('summaryForm').addEventListener('submit', submitSummary);
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadSummaryOptions() {
+      try {
+        const response = await fetch('/api/summaries/mentor/options', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET SUMMARY OPTIONS ERROR:', result);
+          alert(result.message || 'Gagal mengambil pilihan siswa.');
+          return;
+        }
+
+        summaryOptions = result;
+        renderStudentOptions();
+      } catch (error) {
+        console.error('LOAD SUMMARY OPTIONS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil pilihan siswa.');
+      }
+    }
+
+    function renderStudentOptions() {
+      const studentSelect = document.getElementById('nama-siswa');
+
+      const students = [];
+
+      summaryOptions.forEach(item => {
+        const existing = students.find(student => Number(student.id) === Number(item.student_id));
+
+        if (!existing) {
+          students.push({
+            id: item.student_id,
+            full_name: item.full_name,
+            nickname: item.nickname
+          });
+        }
+      });
+
+      if (students.length === 0) {
+        studentSelect.innerHTML = `<option value="">Belum ada siswa dengan kredit aktif</option>`;
+        renderLevelOptions('');
+        return;
+      }
+
+      studentSelect.innerHTML = `
+        <option value="">Pilih siswa</option>
+        ${students.map(student => {
+          return `
+            <option value="${student.id}">
+              ${escapeHtml(student.full_name || '-')}
+            </option>
+          `;
+        }).join('')}
+      `;
+    }
+
+    function renderLevelOptions(studentId) {
+      const levelSelect = document.getElementById('level');
+
+      const levels = summaryOptions.filter(item => {
+        return Number(item.student_id) === Number(studentId);
+      });
+
+      if (levels.length === 0) {
+        levelSelect.innerHTML = `<option value="">Pilih level</option>`;
+        return;
+      }
+
+      levelSelect.innerHTML = `
+        <option value="">Pilih level</option>
+        ${levels.map(level => {
+          return `
+            <option value="${level.level_id}">
+              ${escapeHtml(level.level_name || '-')} - Sisa ${level.remaining_credit} sesi
+            </option>
+          `;
+        }).join('')}
+      `;
+    }
+
+    async function submitSummary(event) {
       event.preventDefault();
 
-      const summaryData = {
-        namaSiswa: document.getElementById('nama-siswa').value,
-        level: document.getElementById('level').value,
-        tanggalKelas: document.getElementById('tanggal-kelas').value,
-        jenisKelas: document.getElementById('jenis-kelas').value,
-        detailSummary: document.getElementById('detail-summary').value,
-        keterangan: document.getElementById('keterangan').value,
-        status: 'Pending'
-      };
+      const studentId = document.getElementById('nama-siswa').value;
+      const levelId = document.getElementById('level').value;
+      const classDate = document.getElementById('tanggal-kelas').value;
+      const classType = document.getElementById('jenis-kelas').value;
+      const summaryText = document.getElementById('detail-summary').value.trim();
+      const keterangan = document.getElementById('keterangan').value.trim();
 
-      localStorage.setItem('newSummaryData', JSON.stringify(summaryData));
+      if (!studentId || !levelId || !classDate || !classType || !summaryText) {
+        alert('Siswa, level, tanggal kelas, jenis kelas, dan detail summary wajib diisi.');
+        return;
+      }
 
-      alert('Summary berhasil disimpan sementara.');
-      window.location.href = '/mentor/summary/summary.html';
-    });
+      try {
+        const response = await fetch('/api/summaries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            student_id: Number(studentId),
+            level_id: Number(levelId),
+            class_date: classDate,
+            class_type: classType,
+            keterangan: keterangan,
+            summary_text: summaryText
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal menyimpan summary.');
+          return;
+        }
+
+        alert(result.message || 'Summary berhasil disimpan.');
+        window.location.href = '/mentor/summary/summary.html';
+      } catch (error) {
+        console.error('CREATE SUMMARY ERROR:', error);
+        alert('Terjadi kesalahan saat menyimpan summary.');
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
   </script>
 
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="/assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

@@ -7,263 +7,482 @@
   <link rel="stylesheet" href="data-siswa.css" />
   <link rel="stylesheet" href="/assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
-  <main class="main-content">
-    <h1>Detail Data Siswa</h1>
 
-    <button class="btn-back" onclick="window.history.back()">Back</button>
+    <main class="main-content">
+      <h1>Detail Data Siswa</h1>
 
-    <div class="detail-layout">
-      <section class="student-card">
-        <div class="photo-box">
-          <span>Foto</span>
-        </div>
+      <button class="btn-back" onclick="window.history.back()">Back</button>
 
-        <div id="siswa-detail-container">
-          <!-- Data siswa akan dimuat lewat JavaScript -->
-        </div>
-      </section>
-
-      <aside class="right-panel">
-        <div id="level-record-container">
-          <h2>Level Record</h2>
-
-          <div class="level-tabs">
-            <button class="level-tab active">Basic 1</button>
-            <button class="level-tab">Basic 2</button>
+      <div class="detail-layout">
+        <section class="student-card">
+          <div class="photo-box" id="photoBox">
+            <span>Foto</span>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Tanggal Kelas</th>
-                <th>Keterangan</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>12/12/2024</td>
-                <td>Memahami instruksi dasar dan mengikuti kelas dengan baik.</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>14/12/2024</td>
-                <td>Mampu menyelesaikan latihan dengan arahan mentor.</td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td>16/12/2024</td>
-                <td>Mulai memahami konsep materi secara mandiri.</td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td>18/12/2024</td>
-                <td>Aktif bertanya dan menunjukkan perkembangan positif.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div id="credit-container">
-          <div class="credit-section">
-            <h2>Sisa Kredit</h2>
-
-            <div class="credit-row">
-              <span>Basic 1</span>
-              <strong>:</strong>
-              <b>3</b>
+          <form id="studentEditForm">
+            <div id="siswa-detail-container">
+              <div>Memuat data siswa...</div>
             </div>
 
-            <div class="credit-row">
-              <span>Basic 2</span>
-              <strong>:</strong>
-              <b>1</b>
+            <div id="btn-simpan-container">
+              <button type="submit" class="btn-simpan">
+                Simpan Perubahan
+              </button>
             </div>
+          </form>
+        </section>
+
+        <aside class="right-panel">
+          <div id="level-record-container">
+            <h2>Level Record</h2>
+
+            <div class="level-tabs" id="levelTabs">
+              <button class="level-tab active" type="button">-</button>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Tanggal Kelas</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+
+              <tbody id="levelRecordBody">
+                <tr>
+                  <td colspan="3">Memuat level record...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <div class="credit-section">
-            <h2>Tanggal Expired</h2>
-
-            <div class="credit-row">
-              <span>Basic 1</span>
-              <strong>:</strong>
-              <b>3/5/2025</b>
-            </div>
-
-            <div class="credit-row">
-              <span>Basic 2</span>
-              <strong>:</strong>
-              <b>1/6/2025</b>
+          <div id="credit-container">
+            <div class="credit-section">
+              <h2>Sisa Kredit</h2>
+              <div>Memuat data kredit...</div>
             </div>
           </div>
-        </div>
-      </aside>
-    </div>
-  </main>
+        </aside>
+      </div>
+    </main>
   </div>
-<script src="/assets/js/auth-guard.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const params = new URLSearchParams(window.location.search);
-    const siswaId = params.get('id');
 
-    fetch(`/api/students/${siswaId}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Data siswa tidak ditemukan');
-        }
+  <script src="/assets/js/auth-guard.js"></script>
 
-        return response.json();
-      })
-      .then(siswa => {
-        const container = document.getElementById("siswa-detail-container");
+  <script>
+    let currentStudent = null;
+    let activeLevelId = null;
 
-        container.innerHTML = `
-          <div class="detail-row">
-            <span>Full Name</span>
-            <p>${siswa.full_name || '-'}</p>
-          </div>
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadStudentDetail();
 
-          <div class="detail-row">
-            <span>Nickname</span>
-            <p>${siswa.nickname || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Parent Name</span>
-            <p>${siswa.parent_name || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Born Date</span>
-            <p>${formatDate(siswa.born_date)}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Age</span>
-            <p>${siswa.age || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Tgl. Bergabung</span>
-            <p>${formatDate(siswa.joined_date)}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Lama Bergabung</span>
-            <p>${siswa.duration || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Kelas Awal</span>
-            <p>${siswa.initial_class || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Kelas Sekarang</span>
-            <p>${siswa.current_class || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>No. Telp</span>
-            <p>${siswa.phone || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Kota</span>
-            <p>${siswa.city || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Sekolah</span>
-            <p>${siswa.school || '-'}</p>
-          </div>
-
-          <div class="detail-row">
-            <span>Email</span>
-            <p>${siswa.email || '-'}</p>
-          </div>
-        `;
-
-        renderCreditInfo(siswa.levels || []);
-      })
-      .catch(error => {
-        console.error('DETAIL STUDENT ERROR:', error);
-        document.getElementById("siswa-detail-container").innerHTML = `
-          <div>Data siswa tidak ditemukan.</div>
-        `;
+      document.getElementById('studentEditForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        await saveStudentDetail();
       });
-  });
+    });
 
-  function formatDate(dateValue) {
-    if (!dateValue) return '-';
-
-    const date = new Date(dateValue);
-
-    if (isNaN(date.getTime())) {
-      return dateValue;
+    function getToken() {
+      return localStorage.getItem('token');
     }
 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    function getStudentIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
 
-    return `${day}/${month}/${year}`;
-  }
+    async function loadStudentDetail() {
+      const siswaId = getStudentIdFromUrl();
 
-  function renderCreditInfo(levels) {
-    const creditContainer = document.getElementById('credit-container');
+      if (!siswaId) {
+        document.getElementById('siswa-detail-container').innerHTML = `
+          <div>ID siswa tidak ditemukan.</div>
+        `;
+        return;
+      }
 
-    if (!creditContainer) return;
+      try {
+        const response = await fetch(`/api/students/${siswaId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
 
-    if (levels.length === 0) {
+        const siswa = await response.json();
+
+        if (!response.ok) {
+          console.error('DETAIL STUDENT ERROR:', siswa);
+          document.getElementById('siswa-detail-container').innerHTML = `
+            <div>${escapeHtml(siswa.message || 'Data siswa tidak ditemukan.')}</div>
+          `;
+          return;
+        }
+
+        currentStudent = siswa;
+
+        renderStudentForm(siswa);
+        renderCreditInfo(siswa.levels || []);
+        renderLevelTabs(siswa.levels || []);
+        renderLevelRecords(siswa.records || []);
+      } catch (error) {
+        console.error('DETAIL STUDENT ERROR:', error);
+        document.getElementById('siswa-detail-container').innerHTML = `
+          <div>Data siswa tidak ditemukan.</div>
+        `;
+      }
+    }
+
+    function renderStudentForm(siswa) {
+      const container = document.getElementById('siswa-detail-container');
+      const photoBox = document.getElementById('photoBox');
+
+      if (siswa.photo) {
+        photoBox.innerHTML = `
+          <img 
+            src="${escapeAttribute(siswa.photo)}" 
+            alt="Foto siswa"
+          >
+          <div class="photo-overlay" onclick="document.getElementById('photo').click()">
+            Ganti Foto
+          </div>
+        `;
+      } else {
+        photoBox.innerHTML = `
+          <span>Foto</span>
+          <div class="photo-overlay" onclick="document.getElementById('photo').click()">
+            Upload Foto
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="detail-row">
+          <span>Full Name</span>
+          <input type="text" id="full_name" value="${escapeAttribute(siswa.full_name || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Nickname</span>
+          <input type="text" id="nickname" value="${escapeAttribute(siswa.nickname || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Parent Name</span>
+          <input type="text" id="parent_name" value="${escapeAttribute(siswa.parent_name || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Born Date</span>
+          <input type="date" id="born_date" value="${dateForInput(siswa.born_date)}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Age</span>
+          <input type="number" id="age" value="${escapeAttribute(siswa.age ?? '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Tgl. Bergabung</span>
+          <input type="date" id="joined_date" value="${dateForInput(siswa.joined_date)}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Lama Bergabung</span>
+          <input type="text" id="duration" value="${escapeAttribute(siswa.duration || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Kelas Awal</span>
+          <input type="text" id="initial_class" value="${escapeAttribute(siswa.initial_class || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Kelas Sekarang</span>
+          <input type="text" id="current_class" value="${escapeAttribute(siswa.current_class || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>No. Telp</span>
+          <input type="text" id="phone" value="${escapeAttribute(siswa.phone || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Kota</span>
+          <input type="text" id="city" value="${escapeAttribute(siswa.city || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Sekolah</span>
+          <input type="text" id="school" value="${escapeAttribute(siswa.school || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Alamat</span>
+          <input type="text" id="address" value="${escapeAttribute(siswa.address || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Email</span>
+          <input type="email" id="email" value="${escapeAttribute(siswa.email || '')}" />
+        </div>
+
+        <div class="detail-row">
+          <span>Google Maps</span>
+          <input type="text" id="gmaps" value="${escapeAttribute(siswa.gmaps || '')}" />
+        </div>
+
+        <input type="file" id="photo" class="hidden-photo-input" accept="image/*" />
+      `;
+      
+      const photoInput = document.getElementById('photo');
+
+      photoInput.addEventListener('change', function () {
+        const file = this.files[0];
+
+        if (!file) return;
+
+        const previewUrl = URL.createObjectURL(file);
+
+        photoBox.innerHTML = `
+          <img 
+            src="${previewUrl}" 
+            alt="Preview foto siswa"
+          >
+          <div class="photo-overlay" onclick="document.getElementById('photo').click()">
+            Ganti Foto
+          </div>
+        `;
+      });
+    }
+
+    async function saveStudentDetail() {
+      const siswaId = getStudentIdFromUrl();
+
+      const fullName = document.getElementById('full_name').value.trim();
+
+      if (!fullName) {
+        alert('Full Name wajib diisi.');
+        return;
+      }
+
+      const confirmed = confirm('Yakin ingin menyimpan perubahan data siswa?');
+
+      if (!confirmed) return;
+
+      const formData = new FormData();
+
+      formData.append('full_name', fullName);
+      formData.append('nickname', document.getElementById('nickname').value.trim());
+      formData.append('parent_name', document.getElementById('parent_name').value.trim());
+      formData.append('born_date', document.getElementById('born_date').value);
+      formData.append('age', document.getElementById('age').value);
+      formData.append('joined_date', document.getElementById('joined_date').value);
+      formData.append('duration', document.getElementById('duration').value.trim());
+      formData.append('initial_class', document.getElementById('initial_class').value.trim());
+      formData.append('current_class', document.getElementById('current_class').value.trim());
+      formData.append('phone', document.getElementById('phone').value.trim());
+      formData.append('city', document.getElementById('city').value.trim());
+      formData.append('school', document.getElementById('school').value.trim());
+      formData.append('address', document.getElementById('address').value.trim());
+      formData.append('email', document.getElementById('email').value.trim());
+      formData.append('gmaps', document.getElementById('gmaps').value.trim());
+
+      const photoInput = document.getElementById('photo');
+
+      if (photoInput.files.length > 0) {
+        formData.append('photo', photoInput.files[0]);
+      }
+
+      try {
+        const response = await fetch(`/api/students/${siswaId}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          alert(result.message || 'Gagal memperbarui data siswa.');
+          return;
+        }
+
+        alert(result.message || 'Data siswa berhasil diperbarui.');
+        await loadStudentDetail();
+      } catch (error) {
+        console.error('UPDATE STUDENT ERROR:', error);
+        alert('Terjadi kesalahan saat memperbarui data siswa.');
+      }
+    }
+
+    function renderCreditInfo(levels) {
+      const creditContainer = document.getElementById('credit-container');
+
+      if (!creditContainer) return;
+
+      if (!levels || levels.length === 0) {
+        creditContainer.innerHTML = `
+          <div class="credit-section">
+            <h2>Sisa Kredit</h2>
+            <div>Belum ada data kredit.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const creditRows = levels.map(level => `
+        <div class="credit-row">
+          <span>${escapeHtml(level.level_name || '-')}</span>
+          <strong>:</strong>
+          <b>${escapeHtml(level.remaining_credit ?? '-')}</b>
+        </div>
+      `).join('');
+
+      const expiredRows = levels.map(level => `
+        <div class="credit-row">
+          <span>${escapeHtml(level.level_name || '-')}</span>
+          <strong>:</strong>
+          <b>${formatDate(level.latest_expired_at)}</b>
+        </div>
+      `).join('');
+
       creditContainer.innerHTML = `
         <div class="credit-section">
           <h2>Sisa Kredit</h2>
-          <div>Belum ada data kredit.</div>
+          ${creditRows}
+        </div>
+
+        <div class="credit-section">
+          <h2>Tanggal Expired</h2>
+          ${expiredRows}
         </div>
       `;
-      return;
     }
 
-    const creditRows = levels.map(level => `
-      <div class="credit-row">
-        <span>${level.level_name}</span>
-        <strong>:</strong>
-        <b>${level.remaining_credit}</b>
-      </div>
-    `).join('');
+    function renderLevelTabs(levels) {
+      const tabsContainer = document.getElementById('levelTabs');
 
-    const expiredRows = levels.map(level => `
-      <div class="credit-row">
-        <span>${level.level_name}</span>
-        <strong>:</strong>
-        <b>${formatDate(level.latest_expired_at)}</b>
-      </div>
-    `).join('');
+      if (!tabsContainer) return;
 
-    creditContainer.innerHTML = `
-      <div class="credit-section">
-        <h2>Sisa Kredit</h2>
-        ${creditRows}
-      </div>
+      if (!levels || levels.length === 0) {
+        tabsContainer.innerHTML = `<button type="button" class="level-tab active">-</button>`;
+        activeLevelId = null;
+        return;
+      }
 
-      <div class="credit-section">
-        <h2>Tanggal Expired</h2>
-        ${expiredRows}
-      </div>
-    `;
-  }
-</script>
+      activeLevelId = levels[0].level_id;
+
+      tabsContainer.innerHTML = levels.map((level, index) => {
+        return `
+          <button
+            type="button"
+            class="level-tab ${index === 0 ? 'active' : ''}"
+            onclick="setActiveLevel(${level.level_id})"
+          >
+            ${escapeHtml(level.level_name || '-')}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setActiveLevel(levelId) {
+      activeLevelId = Number(levelId);
+
+      document.querySelectorAll('.level-tab').forEach(button => {
+        const onclickValue = button.getAttribute('onclick') || '';
+        button.classList.toggle('active', onclickValue.includes(`setActiveLevel(${levelId})`));
+      });
+
+      renderLevelRecords(currentStudent?.records || []);
+    }
+
+    function renderLevelRecords(records) {
+      const recordBody = document.getElementById('levelRecordBody');
+
+      if (!recordBody) return;
+
+      const filteredRecords = (records || []).filter(record => {
+        if (!activeLevelId) return true;
+        return Number(record.level_id) === Number(activeLevelId);
+      });
+
+      if (filteredRecords.length === 0) {
+        recordBody.innerHTML = `
+          <tr>
+            <td colspan="3">Belum ada level record.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      recordBody.innerHTML = filteredRecords.map((record, index) => {
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${formatDate(record.class_date)}</td>
+            <td>${escapeHtml(record.keterangan || record.summary_text || '-')}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatDate(dateValue) {
+      if (!dateValue) return '-';
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateValue;
+      }
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    }
+
+    function dateForInput(dateValue) {
+      if (!dateValue) return '';
+
+      if (typeof dateValue === 'string') {
+        return dateValue.slice(0, 10);
+      }
+
+      const date = new Date(dateValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return '';
+      }
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+  </script>
+
   <script src="/assets/js/sidebar.js"></script>
 </body>
 </html>

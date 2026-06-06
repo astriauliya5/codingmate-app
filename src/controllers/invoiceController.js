@@ -489,37 +489,37 @@ exports.updateInvoiceStatus = async (req, res) => {
       let studentLevelId;
       let previousExpiredAt = null;
 
-      if (item.class_type === 'reguler') {
-        await connection.query(
-          `
-          UPDATE routine_schedules
-          SET end_date = ?
-          WHERE student_id = ?
-          AND level_id = ?
-          AND class_type = 'reguler'
-          AND status = 'active'
-          AND (end_date IS NULL OR end_date < ?)
-          `,
-          [
-            expiredAt,
-            item.student_id,
-            item.level_id,
-            expiredAt
-          ]
-        );
-      }
+if (studentLevelRows.length > 0) {
+  studentLevelId = studentLevelRows[0].id;
+  previousExpiredAt = studentLevelRows[0].latest_expired_at;
+}
 
-      if (studentLevelRows.length > 0) {
-        studentLevelId = studentLevelRows[0].id;
-        previousExpiredAt = studentLevelRows[0].latest_expired_at;
-      }
+const expiredAt = calculateExpiredAt(
+  item.class_type,
+  item.credit_amount,
+  previousExpiredAt,
+  paidAt
+);
 
-      const expiredAt = calculateExpiredAt(
-        item.class_type,
-        item.credit_amount,
-        previousExpiredAt,
-        paidAt
-      );
+if (item.class_type === 'reguler') {
+  await connection.query(
+    `
+    UPDATE routine_schedules
+    SET end_date = ?
+    WHERE student_id = ?
+    AND level_id = ?
+    AND class_type = 'reguler'
+    AND status = 'active'
+    AND (end_date IS NULL OR end_date < ?)
+    `,
+    [
+      expiredAt,
+      item.student_id,
+      item.level_id,
+      expiredAt
+    ]
+  );
+}
 
       if (studentLevelRows.length === 0) {
         const [studentLevelResult] = await connection.query(

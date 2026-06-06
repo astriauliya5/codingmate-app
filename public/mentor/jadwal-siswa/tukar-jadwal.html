@@ -7,64 +7,363 @@
   <link rel="stylesheet" href="jadwal-mentor.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
+
     <main class="main-content">
-    <h1>Tukar Jadwal</h1>
-    <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">Back</button>
+      <h1>Tukar Jadwal</h1>
 
-    <form action="#" class="form-outer">
+      <button class="btn" onclick="window.location.href='pengaturan-jadwal.html'">
+        Back
+      </button>
 
+      <form id="swapScheduleForm" action="#" class="form-outer">
         <div class="form-group">
-          <label for="siswa">Nama Siswa</label>
-          <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
+          <label for="mentor-name">Nama Mentor</label>
+          <input type="text" id="mentor-name" name="mentor-name" value="Auto" disabled />
         </div>
 
         <div class="form-group">
-          <label for="level">Nama Level</label>
+          <label for="student-name">Nama Siswa</label>
+          <input type="text" id="student-name" name="student-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="level-name">Nama Level</label>
+          <input type="text" id="level-name" name="level-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="class-type-name">Jenis Kelas</label>
+          <input type="text" id="class-type-name" name="class-type-name" value="Auto" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="sisa-kredit">Sisa Kredit</label>
           <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
         </div>
 
-        <!-- Jadwal Lama -->
-        <div class="form-group jadwal-lama">
-        <h4>Jadwal Lama</h4>
-        <div class="days">
-            <!-- Jadwal Lama Day Blocks -->
-            <div class="day-block-lama" id="day1">
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
+        <div class="form-group jadwal-lama-tukar">
+          <h4>Jadwal Lama</h4>
+
+          <div class="days">
+            <div class="day-block-lama" id="old-day">
+              <label for="original-date">Tanggal</label>
+              <input type="date" id="original-date" />
+
+              <label for="old-time">Jam</label>
+              <div class="time-row">
+                <input type="text" id="old-time" value="Auto" readonly />
+                <span>WIB</span>
+              </div>
             </div>
-            <!-- Repeat for other days -->
-        </div>
+          </div>
         </div>
 
-        <!-- Jadwal Baru -->
-        <div class="form-group jadwal-baru">
-        <h4>Jadwal Baru</h4>
-        <div class="days">
-            <div class="day-block" id="day1">
-              <label>Tanggal Mulai</label>
-              <select>
-                <option>Value</option>
-              </select>
-              <label>Jam</label>
-              <input type="time" />
+        <div class="form-group jadwal-baru-tukar">
+          <h4>Jadwal Baru</h4>
+
+          <div class="days">
+            <div class="day-block" id="new-day">
+              <label for="new-date">Tanggal</label>
+              <input type="date" id="new-date" />
+
+              <label for="new-start-time">Jam</label>
+              <div class="time-row">
+                <input type="time" id="new-start-time" class="start-time" />
+                <span>WIB</span>
+              </div>
+
+              <input type="hidden" id="new-end-time" />
             </div>
           </div>
         </div>
 
         <div class="validation">
-        <button type="button" class="btn-option">Cancel</button>
-        <button type="submit" class="btn-option">Simpan</button>
+          <button type="button" class="btn-option" onclick="window.location.href='pengaturan-jadwal.html'">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn-option">
+            Simpan
+          </button>
         </div>
-    </form>
+      </form>
     </main>
   </div>
+
+  <script>
+    let scheduleContext = null;
+    let currentSchedules = [];
+    let selectedSchedule = null;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      const form = document.getElementById('swapScheduleForm');
+      const originalDateInput = document.getElementById('original-date');
+      const newDateInput = document.getElementById('new-date');
+      const newStartTimeInput = document.getElementById('new-start-time');
+
+      scheduleContext = JSON.parse(sessionStorage.getItem('mentorScheduleContext'));
+
+      if (!scheduleContext) {
+        alert('Data pengaturan jadwal belum dipilih.');
+        window.location.href = 'pengaturan-jadwal.html';
+        return;
+      }
+
+      loadScheduleContextDetail();
+      await loadRoutineSchedules();
+
+      originalDateInput.addEventListener('change', handleOriginalDateChange);
+
+      newDateInput.addEventListener('change', function () {
+        const newDateDay = getDayOfWeekMondayBased(this.value);
+
+        if (newDateDay === 6) {
+          alert('Tanggal baru tidak boleh hari Minggu.');
+          this.value = '';
+        }
+      });
+
+      newStartTimeInput.addEventListener('change', function () {
+        document.getElementById('new-end-time').value = addOneHour(this.value);
+      });
+
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        await submitSwapSchedule();
+      });
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    function getCurrentUser() {
+      try {
+        return JSON.parse(localStorage.getItem('currentUser'));
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function formatClassType(value) {
+      return value === 'trial' ? 'Trial' : 'Reguler';
+    }
+
+    function getDayName(day) {
+      const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      return dayNames[Number(day)] || '-';
+    }
+
+    function normalizeTime(timeValue) {
+      if (!timeValue) return '';
+      return timeValue.length === 5 ? `${timeValue}:00` : timeValue;
+    }
+
+    function timeForInput(timeValue) {
+      if (!timeValue) return '';
+      return String(timeValue).slice(0, 5);
+    }
+
+    function addOneHour(timeValue) {
+      if (!timeValue) return '';
+
+      const [hour, minute] = timeValue.split(':').map(Number);
+
+      const date = new Date();
+      date.setHours(hour);
+      date.setMinutes(minute);
+      date.setSeconds(0);
+      date.setHours(date.getHours() + 1);
+
+      const endHour = String(date.getHours()).padStart(2, '0');
+      const endMinute = String(date.getMinutes()).padStart(2, '0');
+
+      return `${endHour}:${endMinute}`;
+    }
+
+    function getDayOfWeekMondayBased(dateString) {
+      if (!dateString) return null;
+
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      const jsDay = date.getDay();
+
+      return jsDay === 0 ? 6 : jsDay - 1;
+    }
+
+    function loadScheduleContextDetail() {
+      const currentUser = getCurrentUser();
+
+      document.getElementById('mentor-name').value =
+        currentUser?.full_name || currentUser?.username || '-';
+
+      document.getElementById('student-name').value =
+        scheduleContext.student_name || '-';
+
+      document.getElementById('level-name').value =
+        scheduleContext.level_name || '-';
+
+      document.getElementById('class-type-name').value =
+        'Pilih tanggal lama';
+
+      document.getElementById('sisa-kredit').value =
+        typeof scheduleContext.remaining_credit !== 'undefined'
+          ? `${scheduleContext.remaining_credit} kredit`
+          : '-';
+    }
+
+    async function loadRoutineSchedules() {
+      try {
+        const response = await fetch('/api/schedules', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET ROUTINE SCHEDULES ERROR:', result);
+          alert(result.error || result.message || 'Gagal mengambil data jadwal rutin.');
+          return;
+        }
+
+        const currentUser = getCurrentUser();
+        const mentorId = currentUser?.id;
+
+        const schedules = Array.isArray(result) ? result : [];
+
+        currentSchedules = schedules.filter(schedule => {
+          const sameStudent = Number(schedule.student_id) === Number(scheduleContext.student_id);
+          const sameLevel = Number(schedule.level_id) === Number(scheduleContext.level_id);
+          const sameMentor = !mentorId || Number(schedule.mentor_id) === Number(mentorId);
+          const isActive = !schedule.status || schedule.status === 'active';
+
+          return sameStudent && sameLevel && sameMentor && isActive;
+        });
+
+        if (currentSchedules.length === 0) {
+          alert('Belum ada jadwal rutin untuk siswa dan level ini.');
+        }
+      } catch (error) {
+        console.error('LOAD ROUTINE SCHEDULES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data jadwal rutin.');
+      }
+    }
+
+    function handleOriginalDateChange() {
+      const originalDate = document.getElementById('original-date').value;
+      const oldTimeInput = document.getElementById('old-time');
+
+      oldTimeInput.value = 'Auto';
+      selectedSchedule = null;
+      document.getElementById('class-type-name').value = 'Pilih tanggal lama';
+
+      if (!originalDate) return;
+
+      const originalDateDay = getDayOfWeekMondayBased(originalDate);
+
+      if (originalDateDay === 6) {
+        alert('Tanggal lama tidak boleh hari Minggu.');
+        document.getElementById('original-date').value = '';
+        return;
+      }
+
+      const matchedSchedules = currentSchedules.filter(schedule => {
+        return Number(schedule.day_of_week) === Number(originalDateDay);
+      });
+
+      if (matchedSchedules.length === 0) {
+        alert(`Tidak ada jadwal rutin pada hari ${getDayName(originalDateDay)} untuk siswa dan level yang dipilih.`);
+        document.getElementById('original-date').value = '';
+        return;
+      }
+
+      if (matchedSchedules.length > 1) {
+        alert('Ada lebih dari satu jadwal rutin pada tanggal tersebut. Untuk sementara, pilih tanggal dari hari yang hanya punya satu jadwal rutin.');
+        document.getElementById('original-date').value = '';
+        return;
+      }
+
+      selectedSchedule = matchedSchedules[0];
+
+      oldTimeInput.value =
+        `${timeForInput(selectedSchedule.start_time)} - ${timeForInput(selectedSchedule.end_time)}`;
+
+      document.getElementById('class-type-name').value =
+        formatClassType(selectedSchedule.class_type);
+    }
+
+    async function submitSwapSchedule() {
+      const originalDate = document.getElementById('original-date').value;
+      const newDate = document.getElementById('new-date').value;
+      const newStartTime = normalizeTime(document.getElementById('new-start-time').value);
+      const newEndTime = normalizeTime(document.getElementById('new-end-time').value);
+
+      if (!selectedSchedule) {
+        alert('Pilih tanggal jadwal lama yang sesuai dengan jadwal rutin terlebih dahulu.');
+        return;
+      }
+
+      if (!originalDate || !newDate || !newStartTime || !newEndTime) {
+        alert('Tanggal lama, tanggal baru, dan jam baru wajib diisi.');
+        return;
+      }
+
+      const newDateDay = getDayOfWeekMondayBased(newDate);
+
+      if (newDateDay === 6) {
+        alert('Tanggal baru tidak boleh hari Minggu.');
+        return;
+      }
+
+      if (newStartTime >= newEndTime) {
+        alert('Jam mulai baru harus lebih kecil dari jam selesai baru.');
+        return;
+      }
+
+      const confirmed = confirm('Yakin ingin menukar jadwal ini?');
+
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch('/api/schedules/swap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({
+            routine_schedule_id: Number(selectedSchedule.id),
+            original_date: originalDate,
+            new_date: newDate,
+            new_start_time: newStartTime,
+            new_end_time: newEndTime
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('SWAP SCHEDULE ERROR RESULT:', result);
+          alert(result.error || result.message || 'Gagal menukar jadwal.');
+          return;
+        }
+
+        alert('Tukar jadwal berhasil disimpan.');
+        window.location.href = '/mentor/jadwal-siswa/jadwal-siswa.html';
+      } catch (error) {
+        console.error('SWAP SCHEDULE ERROR:', error);
+        alert('Terjadi kesalahan saat menukar jadwal.');
+      }
+    }
+  </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>

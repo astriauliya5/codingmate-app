@@ -7,27 +7,28 @@
   <link rel="stylesheet" href="jadwal-mentor.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
+
     <main class="main-content">
       <h1>Pengaturan Jadwal</h1>
+
       <button class="btn" onclick="window.location.href='jadwal-siswa.html'">Back</button>
 
       <form action="#" class="form-outer">
         <div class="form-group">
           <label for="siswa">Nama Siswa</label>
           <select id="siswa" name="siswa">
-            <option value="value1">Value</option>
-            <option value="value2">Value</option>
+            <option value="">Memuat siswa...</option>
           </select>
         </div>
 
         <div class="form-group">
           <label for="level">Nama Level</label>
           <select id="level" name="level">
-            <option value="value1">Value</option>
-            <option value="value2">Value</option>
+            <option value="">Pilih siswa terlebih dahulu</option>
           </select>
         </div>
 
@@ -38,14 +39,224 @@
 
         <div class="form-group">
           <label>Pilihan:</label>
+
           <div class="button-group">
-            <a type="button" class="btn-option" href="ubah-jadwal-rutin.html">Ubah Jadwal Rutin</a>
-            <a type="button" class="btn-option" href="tukar-jadwal.html">Tukar Jadwal</a>
+            <button type="button" class="btn-option" onclick="goToUbahJadwal()">
+              Ubah Jadwal Rutin
+            </button>
+
+            <button type="button" class="btn-option" onclick="goToTukarJadwal()">
+              Tukar Jadwal
+            </button>
           </div>
         </div>
       </form>
     </main>
   </div>
+
+  <script>
+    let mentorStudents = [];
+    let selectedStudentDetail = null;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      await loadMentorStudents();
+
+      document.getElementById('siswa').addEventListener('change', async function () {
+        const studentId = this.value;
+
+        clearLevelAndCredit();
+
+        if (!studentId) return;
+
+        await loadStudentLevels(studentId);
+      });
+
+      document.getElementById('level').addEventListener('change', function () {
+        updateSelectedCredit();
+      });
+    });
+
+    function getToken() {
+      return localStorage.getItem('token');
+    }
+
+    async function loadMentorStudents() {
+      try {
+        const response = await fetch('/api/students/mentor', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET MENTOR STUDENTS ERROR:', result);
+          alert(result.message || 'Gagal mengambil data siswa mentor.');
+          return;
+        }
+
+        mentorStudents = Array.isArray(result) ? result : [];
+        renderStudentOptions();
+      } catch (error) {
+        console.error('LOAD MENTOR STUDENTS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil data siswa mentor.');
+      }
+    }
+
+    function renderStudentOptions() {
+      const siswaSelect = document.getElementById('siswa');
+
+      if (mentorStudents.length === 0) {
+        siswaSelect.innerHTML = `<option value="">Belum ada siswa</option>`;
+        return;
+      }
+
+      siswaSelect.innerHTML = `
+        <option value="">Pilih siswa</option>
+        ${mentorStudents.map(student => {
+          return `
+            <option value="${student.id}">
+              ${escapeHtml(student.full_name || '-')}
+            </option>
+          `;
+        }).join('')}
+      `;
+    }
+
+    async function loadStudentLevels(studentId) {
+      try {
+        const response = await fetch(`/api/students/mentor/${studentId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET MENTOR STUDENT DETAIL ERROR:', result);
+          alert(result.message || 'Gagal mengambil detail siswa.');
+          return;
+        }
+
+        selectedStudentDetail = result;
+        renderLevelOptions(result.levels || []);
+      } catch (error) {
+        console.error('LOAD STUDENT LEVELS ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil level siswa.');
+      }
+    }
+
+    function renderLevelOptions(levels) {
+      const levelSelect = document.getElementById('level');
+
+      if (!levels || levels.length === 0) {
+        levelSelect.innerHTML = `<option value="">Siswa belum punya level aktif</option>`;
+        document.getElementById('sisa-kredit').value = '-';
+        return;
+      }
+
+      levelSelect.innerHTML = `
+        <option value="">Pilih level</option>
+        ${levels.map(level => {
+          return `
+            <option
+              value="${level.level_id}"
+              data-level-name="${escapeHtml(level.level_name || '-')}"
+              data-remaining-credit="${level.remaining_credit ?? 0}"
+              data-expired-at="${level.latest_expired_at || ''}"
+            >
+              ${escapeHtml(level.level_name || '-')}
+            </option>
+          `;
+        }).join('')}
+      `;
+    }
+
+    function updateSelectedCredit() {
+      const levelSelect = document.getElementById('level');
+      const selectedOption = levelSelect.options[levelSelect.selectedIndex];
+
+      if (!selectedOption || !selectedOption.value) {
+        document.getElementById('sisa-kredit').value = 'Auto';
+        return;
+      }
+
+      const remainingCredit = selectedOption.dataset.remainingCredit || 0;
+      document.getElementById('sisa-kredit').value = remainingCredit;
+    }
+
+    function clearLevelAndCredit() {
+      selectedStudentDetail = null;
+
+      document.getElementById('level').innerHTML = `
+        <option value="">Pilih siswa terlebih dahulu</option>
+      `;
+
+      document.getElementById('sisa-kredit').value = 'Auto';
+    }
+
+    function getSelectedScheduleContext() {
+      const siswaSelect = document.getElementById('siswa');
+      const levelSelect = document.getElementById('level');
+
+      const studentId = siswaSelect.value;
+      const levelId = levelSelect.value;
+
+      if (!studentId || !levelId) {
+        alert('Pilih siswa dan level terlebih dahulu.');
+        return null;
+      }
+
+      const selectedStudent = mentorStudents.find(student => {
+        return Number(student.id) === Number(studentId);
+      });
+
+      const selectedOption = levelSelect.options[levelSelect.selectedIndex];
+
+      const context = {
+        student_id: Number(studentId),
+        student_name: selectedStudent?.full_name || '',
+        nickname: selectedStudent?.nickname || '',
+        level_id: Number(levelId),
+        level_name: selectedOption.dataset.levelName || selectedOption.textContent.trim(),
+        remaining_credit: Number(selectedOption.dataset.remainingCredit || 0),
+        latest_expired_at: selectedOption.dataset.expiredAt || ''
+      };
+
+      sessionStorage.setItem('mentorScheduleContext', JSON.stringify(context));
+
+      return context;
+    }
+
+    function goToUbahJadwal() {
+      const context = getSelectedScheduleContext();
+
+      if (!context) return;
+
+      window.location.href = 'ubah-jadwal-rutin.html';
+    }
+
+    function goToTukarJadwal() {
+      const context = getSelectedScheduleContext();
+
+      if (!context) return;
+
+      window.location.href = 'tukar-jadwal.html';
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+  </script>
+
+  <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar-mentor.js"></script>
 </body>
 </html>
