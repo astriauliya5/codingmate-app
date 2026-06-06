@@ -1,10 +1,31 @@
-/* MAIN CONTENT */
+/* =========================
+   PEMBELIAN KREDIT PAGE
+========================= */
+
+.main-content {
+  min-width: 0;
+  max-width: calc(100vw - 245px);
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* TOP ACTION */
 .top-action {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
   margin-top: 35px;
   margin-bottom: 25px;
+  box-sizing: border-box;
+}
+
+.top-action > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .btn {
@@ -17,60 +38,45 @@
   cursor: pointer;
 }
 
-.btn :hover {
+.btn:hover {
   background-color: #444;
 }
 
-.search-box {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 15px;
-  font-size: 14px;
-}
-
-.search-box input {
-  width: 210px;
-  padding: 10px 12px;
-  border: 1px solid #444;
-  border-radius: 8px;
-  background: #ddd;
-}
-
-.search-box select {
-  padding: 2px 8px;
-}
-
+/* TABLE SCROLL ONLY */
 .table-wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: auto;
   max-height: 520px;
   padding-bottom: 12px;
+  box-sizing: border-box;
 }
 
-table {
+.table-wrapper table {
   border-collapse: collapse;
   min-width: 1350px;
-  width: 100%;
+  width: max-content;
   font-size: 12px;
   text-align: center;
 }
 
-th {
+.table-wrapper th {
   font-weight: normal;
   padding: 12px 10px;
   border-top: 1px solid #aaa;
   border-right: 1px solid #aaa;
   border-bottom: 1px solid #aaa;
   background: white;
+  white-space: nowrap;
 }
 
-td {
+.table-wrapper td {
   padding: 12px 10px;
   white-space: nowrap;
 }
 
+/* BUTTON TABLE */
 .btn-delete,
 .btn-pdf {
   border: none;
@@ -85,12 +91,22 @@ td {
   color: #b00000;
 }
 
+.btn-delete:hover {
+  background: #d0d0d0;
+}
+
 .btn-pdf {
   background: #d9d9d9;
   color: #333;
 }
 
+.btn-pdf:hover {
+  background: #c9c9c9;
+}
+
+/* STATUS */
 .status {
+  width: auto;
   border: 1px solid #888;
   padding: 6px 12px;
   border-radius: 3px;
@@ -113,7 +129,10 @@ td {
   color: #2f5e1e;
 }
 
-/* FORM PEMBELIAN */
+/* =========================
+   FORM PEMBELIAN
+========================= */
+
 #form-container {
   display: flex;
   flex-direction: column;
@@ -149,16 +168,8 @@ label {
   font-size: 14px;
 }
 
-select,
-input {
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid #555;
-  font-size: 14px;
-  background: #f7f7f7;
-}
 
-select {
+form select {
   width: 760px;
 }
 
@@ -216,91 +227,9 @@ select {
   background: #444;
 }
 
-/* INVOICE */
-/* .invoice-container {
-  max-width: 850px;
-  margin-top: 30px;
-  border: 1px solid #555;
-  border-radius: 6px;
-  padding: 20px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.invoice-preview {
-  width: 100%;
-  border: 1px solid #555;
-  border-radius: 6px;
-  padding: 20px;
-  background: white;
-  min-height: 360px;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.invoice-table {
-  width: 100%;
-  min-width: 0 !important;
-  table-layout: fixed;
-  border-collapse: collapse;
-  font-size: 12px;
-  text-align: center;
-}
-
-.invoice-table th,
-.invoice-table td {
-  padding: 7px 6px;
-  border: 1px solid #ddd;
-  white-space: normal !important;
-  word-wrap: break-word;
-  box-sizing: border-box;
-}
-
-.invoice-table th {
-  background: #f4c79b;
-  font-weight: bold;
-  border: 1px solid #999;
-}
-
-.invoice-table tbody tr:nth-child(even) {
-  background: #f5caca;
-}
-
-.invoice-table .col-no {
-  width: 8%;
-}
-
-.invoice-table .col-name {
-  width: 28%;
-}
-
-.invoice-table .col-level {
-  width: 18%;
-}
-
-.invoice-table .col-paid {
-  width: 16%;
-}
-
-.invoice-table .col-date {
-  width: 16%;
-}
-
-.invoice-table .col-total {
-  width: 18%;
-}
-
-.grand-total-label {
-  text-align: right;
-  font-weight: bold;
-  background: white !important;
-}
-
-.grand-total {
-  font-weight: bold;
-  background: white !important;
-}
-*/
+/* =========================
+   INVOICE
+========================= */
 
 .invoice-actions {
   display: flex;
@@ -329,8 +258,6 @@ select {
   padding: 20px;
   background: white;
   box-sizing: border-box;
-
-  /* ini penting, jangan hidden */
   overflow: visible !important;
 }
 
@@ -375,7 +302,7 @@ select {
   box-sizing: border-box;
 }
 
-/* tambahan */
+/* PDF MODE */
 .pdf-mode {
   width: 1050px !important;
   max-width: 1050px !important;
@@ -480,7 +407,7 @@ select {
   width: 20%;
 }
 
-/* DELETE BUTTON */
+/* DELETE BUTTON LEVEL */
 .level-page .btn-delete {
   background: #e6e6e6;
   color: #b00000;
@@ -555,4 +482,14 @@ select {
 
 .level-page .btn-submit:hover {
   background: #444;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+  form select {
+    width: 100%;
+  }
 }

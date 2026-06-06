@@ -7,25 +7,54 @@
   <link rel="stylesheet" href="data-siswa.css" />
   <link rel="stylesheet" href="../../assets/css/index.css" />
 </head>
+
 <body>
   <div class="container">
     <div id="sidebar-container"></div>
-    <main class="main-content">
-        <div class="top-bar">
-            <h1>Data Siswa</h1>
-    <button class="btn" onclick="window.location.href='pendaftaran-siswa.html'">+ Pendaftaran Siswa Baru</button>
 
-    <div class="table-container">
-        <div class="table-header">
-        <input type="text" id="search" placeholder="Search">
-        <select id="tampil" onchange="updateRows()">
-            <option value="20">Tampilkan 20 data</option>
-            <option value="40">Tampilkan 40 data</option>
-            <option value="60">Tampilkan 60 data</option>
-        </select>
+    <main class="main-content">
+      <h1>Data Siswa</h1>
+
+      <div class="top-action">
+        <div>
+          <button class="btn" onclick="window.location.href='pendaftaran-siswa.html'">
+            + Pendaftaran Siswa Baru
+          </button>
         </div>
+
+        <div class="data-controls">
+          <div class="entry-sort-row">
+            <label>
+              Tampilkan
+              <select id="tampil">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+              data
+            </label>
+
+            <button
+              type="button"
+              id="sortToggleBtn"
+              class="sort-toggle-btn"
+              data-sort="newest"
+              aria-label="Urutkan data"
+            >
+              ↕
+              <span class="sort-tooltip" id="sortTooltip">
+                Urutkan dari data terbaru ke terlama
+              </span>
+            </button>
+          </div>
+
+          <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 Search">
+          </div>
         </div>
-        
+      </div>
+
+      <div class="table-wrapper">
         <table id="table-container">
           <thead>
             <tr>
@@ -34,7 +63,7 @@
               <th>Full Name</th>
               <th>Nickname</th>
               <th>Parent Name</th>
-              <th>Borna Date</th>
+              <th>Born Date</th>
               <th>Age</th>
               <th>Tanggal Bergabung</th>
               <th>Lama Bergabung</th>
@@ -47,153 +76,231 @@
               <th>Email</th>
             </tr>
           </thead>
+
           <tbody id="data-table-body">
-            <!-- Data akan di-generate menggunakan JavaScript -->
+            <tr>
+              <td colspan="16">Memuat data siswa...</td>
+            </tr>
           </tbody>
         </table>
-    </div>
+      </div>
     </main>
   </div>
-<script src="/assets/js/auth-guard.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    let allDataSiswa = [];
-    let currentData = [];
 
-    function formatDate(dateValue) {
-      if (!dateValue) return '-';
+  <script src="/assets/js/auth-guard.js"></script>
 
-      const date = new Date(dateValue);
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let allDataSiswa = [];
+      let currentData = [];
 
-      if (isNaN(date.getTime())) {
-        return dateValue;
+      const searchInput = document.getElementById('search');
+      const tampilSelect = document.getElementById('tampil');
+      const sortToggleBtn = document.getElementById('sortToggleBtn');
+      const sortTooltip = document.getElementById('sortTooltip');
+
+      fetchStudents();
+
+      function getToken() {
+        return localStorage.getItem('token');
       }
 
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
+      function formatDate(dateValue) {
+        if (!dateValue) return '-';
 
-      return `${day}/${month}/${year}`;
-    }
+        const date = new Date(dateValue);
 
-    function generateTableRows(data) {
-      const tableBody = document.querySelector("#data-table-body");
-      const jumlahTampil = Number(document.getElementById('tampil').value);
-
-      tableBody.innerHTML = '';
-
-      data.slice(0, jumlahTampil).forEach((student, index) => {
-        const row = document.createElement('tr');
-
-        row.innerHTML = `
-          <td>${index + 1}</td>
-
-          <td>
-            <button class="hapus" onclick="hapusSiswa(${student.id})">
-              X Hapus
-            </button>
-          </td>
-
-          <td>
-            <button class="btn-name" onclick="showDetailSiswa(${student.id})">
-              ${student.full_name || '-'}
-            </button>
-          </td>
-
-          <td>${student.nickname || '-'}</td>
-          <td>${student.parent_name || '-'}</td>
-          <td>${formatDate(student.born_date)}</td>
-          <td>${student.age || '-'}</td>
-          <td>${formatDate(student.joined_date)}</td>
-          <td>${student.duration || '-'}</td>
-          <td>${student.initial_class || '-'}</td>
-          <td>${student.current_class || '-'}</td>
-          <td>${student.phone || '-'}</td>
-          <td>${student.city || '-'}</td>
-          <td>${student.school || '-'}</td>
-          <td>${student.address || '-'}</td>
-          <td>${student.email || '-'}</td>
-        `;
-
-        tableBody.appendChild(row);
-      });
-    }
-
-    fetch('/api/students', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Gagal mengambil data siswa dari API');
+        if (Number.isNaN(date.getTime())) {
+          return dateValue;
         }
 
-        return response.json();
-      })
-      .then(dataSiswa => {
-        allDataSiswa = dataSiswa;
-        currentData = allDataSiswa;
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}/${month}/${year}`;
+      }
+
+      async function fetchStudents() {
+        try {
+          const response = await fetch('/api/students', {
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(result.message || 'Gagal mengambil data siswa.');
+            return;
+          }
+
+          allDataSiswa = Array.isArray(result) ? result : [];
+          applyFilterSortAndRender();
+        } catch (error) {
+          console.error('GET STUDENTS ERROR:', error);
+          alert('Terjadi kesalahan saat mengambil data siswa.');
+        }
+      }
+
+      function applyFilterSortAndRender() {
+        const query = searchInput.value.toLowerCase();
+        const sortOrder = sortToggleBtn.dataset.sort || 'newest';
+
+        currentData = allDataSiswa.filter(student => {
+          const combinedText = [
+            student.id,
+            student.full_name,
+            student.nickname,
+            student.parent_name,
+            student.born_date,
+            student.age,
+            student.joined_date,
+            student.duration,
+            student.initial_class,
+            student.current_class,
+            student.phone,
+            student.city,
+            student.school,
+            student.address,
+            student.email
+          ].join(' ').toLowerCase();
+
+          return combinedText.includes(query);
+        });
+
+        currentData.sort((a, b) => {
+          const idA = Number(a.id || 0);
+          const idB = Number(b.id || 0);
+
+          if (sortOrder === 'oldest') {
+            return idA - idB;
+          }
+
+          return idB - idA;
+        });
 
         generateTableRows(currentData);
+      }
 
-        document.getElementById('search').addEventListener('input', function () {
-          const query = this.value.toLowerCase();
+      function generateTableRows(data) {
+        const tableBody = document.querySelector("#data-table-body");
+        const jumlahTampil = Number(tampilSelect.value);
 
-          currentData = allDataSiswa.filter(student =>
-            Object.values(student).some(val =>
-              String(val).toLowerCase().includes(query)
-            )
-          );
+        tableBody.innerHTML = '';
 
-          generateTableRows(currentData);
-        });
+        const slicedData = data.slice(0, jumlahTampil);
 
-        document.getElementById('tampil').addEventListener('change', function () {
-          generateTableRows(currentData);
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching data:', error);
-      });
-
-    window.showDetailSiswa = function (id) {
-      window.location.href = `detail-data-siswa.html?id=${id}`;
-    };
-
-    window.hapusSiswa = async function (id) {
-      const konfirmasi = confirm('Yakin ingin menghapus data siswa ini?');
-
-      if (!konfirmasi) return;
-
-      try {
-        const response = await fetch(`/api/students/${id}`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          alert(result.message || 'Gagal menghapus data siswa.');
+        if (slicedData.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="16">Belum ada data siswa.</td>
+            </tr>
+          `;
           return;
         }
 
-        alert('Data siswa berhasil dihapus.');
-        location.reload();
-      } catch (error) {
-        console.error('DELETE STUDENT ERROR:', error);
-        alert('Terjadi kesalahan saat menghapus data siswa.');
-      }
-    };
+        slicedData.forEach((student, index) => {
+          const row = document.createElement('tr');
 
-    window.updateRows = function () {
-      generateTableRows(currentData);
-    };
-  });
-</script>
-<script src="/assets/js/sidebar.js"></script>
+          row.innerHTML = `
+            <td>${index + 1}</td>
+
+            <td>
+              <button class="btn-delete" onclick="hapusSiswa(${student.id})">
+                ✖ Hapus
+              </button>
+            </td>
+
+            <td>
+              <button class="btn-name" onclick="showDetailSiswa(${student.id})">
+                ${escapeHtml(student.full_name || '-')}
+              </button>
+            </td>
+
+            <td>${escapeHtml(student.nickname || '-')}</td>
+            <td>${escapeHtml(student.parent_name || '-')}</td>
+            <td>${formatDate(student.born_date)}</td>
+            <td>${escapeHtml(student.age ?? '-')}</td>
+            <td>${formatDate(student.joined_date)}</td>
+            <td>${escapeHtml(student.duration || '-')}</td>
+            <td>${escapeHtml(student.initial_class || '-')}</td>
+            <td>${escapeHtml(student.current_class || '-')}</td>
+            <td>${escapeHtml(student.phone || '-')}</td>
+            <td>${escapeHtml(student.city || '-')}</td>
+            <td>${escapeHtml(student.school || '-')}</td>
+            <td>${escapeHtml(student.address || '-')}</td>
+            <td>${escapeHtml(student.email || '-')}</td>
+          `;
+
+          tableBody.appendChild(row);
+        });
+      }
+
+      searchInput.addEventListener('input', applyFilterSortAndRender);
+
+      tampilSelect.addEventListener('change', function () {
+        generateTableRows(currentData);
+      });
+
+      sortToggleBtn.addEventListener('click', function () {
+        const currentSort = this.dataset.sort || 'newest';
+        const nextSort = currentSort === 'newest' ? 'oldest' : 'newest';
+
+        this.dataset.sort = nextSort;
+
+        sortTooltip.textContent =
+          nextSort === 'newest'
+            ? 'Urutkan dari data terbaru ke terlama'
+            : 'Urutkan dari data terlama ke terbaru';
+
+        applyFilterSortAndRender();
+      });
+
+      window.showDetailSiswa = function (id) {
+        window.location.href = `detail-data-siswa.html?id=${id}`;
+      };
+
+      window.hapusSiswa = async function (id) {
+        const konfirmasi = confirm('Yakin ingin menghapus data siswa ini?');
+
+        if (!konfirmasi) return;
+
+        try {
+          const response = await fetch(`/api/students/${id}`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${getToken()}`
+            }
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            alert(result.message || 'Gagal menghapus data siswa.');
+            return;
+          }
+
+          alert(result.message || 'Data siswa berhasil dihapus.');
+          await fetchStudents();
+        } catch (error) {
+          console.error('DELETE STUDENT ERROR:', error);
+          alert('Terjadi kesalahan saat menghapus data siswa.');
+        }
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+    });
+  </script>
+
+  <script src="/assets/js/sidebar.js"></script>
 </body>
 </html>

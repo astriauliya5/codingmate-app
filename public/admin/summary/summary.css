@@ -53,6 +53,36 @@
   white-space: nowrap;
 }
 
+/* Khusus kolom Summary biar teksnya turun ke bawah */
+.summary-table td:nth-child(9) {
+  max-width: 140px;
+  white-space: normal;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* Kolom Full Name */
+.summary-table th:nth-child(4),
+.summary-table td:nth-child(4) {
+  max-width: 110px;
+  width: 110px;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Kolom Level */
+.summary-table th:nth-child(6),
+.summary-table td:nth-child(6) {
+  max-width: 95px;
+  width: 95px;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
 .summary-table input[type="checkbox"] {
   width: 16px;
   height: 16px;

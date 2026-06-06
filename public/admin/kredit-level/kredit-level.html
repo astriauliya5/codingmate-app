@@ -15,21 +15,23 @@
 
     <div class="top-action">
         <div>
-        <button class="btn" onclick="window.location.href='form-pembelian.html'">+ Tambah Pembelian Kredit</button>
-        <button class="btn" onclick="window.location.href='level-harga.html'">Level dan Harga</button>
+          <button class="btn" onclick="window.location.href='form-pembelian.html'">+ Tambah Pembelian Kredit</button>
+          <button class="btn" onclick="window.location.href='level-harga.html'">Level dan Harga</button>
         </div>
 
         <div class="search-box">
-        <input type="text" placeholder="🔍 Search">
-        <label>
+          <input type="text" id="search" placeholder="🔍 Search">
+
+          <label>
             Tampilkan
-            <select>
-            <option>4</option>
-            <option>10</option>
-            <option>25</option>
+            <select id="tampil">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
             </select>
             entri
-        </label>
+          </label>
         </div>
     </div>
 

@@ -1,40 +1,184 @@
+/* =========================
+   DATA SISWA PAGE
+========================= */
 
-/* Styling tabel */
-table {
+.main-content {
+  min-width: 0;
+  max-width: calc(100vw - 245px);
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* TOP ACTION */
+.top-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+  max-width: 100%;
+  margin-top: 35px;
+  margin-bottom: 25px;
+  box-sizing: border-box;
+}
+
+.top-action > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.data-controls {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.entry-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.entry-sort-row label {
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.entry-sort-row select {
+  width: auto;
+  padding: 2px 6px;
+  border: 1px solid #999;
+  border-radius: 2px;
+  background: #f7f7f7;
   font-size: 12px;
 }
 
-td {
-  padding: 12px 10px;
-  white-space: nowrap;
+.sort-toggle-btn {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #bbb;
+  border-radius: 2px;
+  background: #e6e6e6;
+  color: #111;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-th {
-  padding: 12px 10px;
-  border: 1px solid #aaa;
-  font-weight: normal;
-  background: #fff;
+.sort-toggle-btn:hover {
+  background: #d6d6d6;
 }
 
-td, tr {
-  background-color: white;
+.sort-tooltip {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  width: 150px;
+  padding: 7px 9px;
+  border-radius: 4px;
+  background: rgba(70, 70, 70, 0.9);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.15s ease;
 }
 
-/* Styling tombol Hapus di dalam tabel */
-button.hapus {
-  background-color: #d93838;
+.sort-toggle-btn:hover .sort-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.data-controls .search-box {
+  align-items: flex-end;
+}
+
+.data-controls .search-box input {
+  width: 180px;
+  padding: 9px 12px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  background: #d9d9d9;
+  box-sizing: border-box;
+}
+
+
+.btn {
+  background: #222;
   color: white;
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 10px 20px;
+  margin: 20px 8px 20px 0;
   border: none;
+  border-radius: 5px;
   cursor: pointer;
 }
 
+.btn:hover {
+  background: #444;
+}
+
+/* TABLE SCROLL ONLY */
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 540px;
+  padding-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.table-wrapper table {
+  border-collapse: collapse;
+  min-width: 1450px;
+  width: max-content;
+  font-size: 12px;
+  text-align: center;
+}
+
+.table-wrapper th {
+  font-weight: normal;
+  padding: 12px 10px;
+  border: 1px solid #aaa;
+  background: white;
+  white-space: nowrap;
+}
+
+.table-wrapper td {
+  padding: 12px 10px;
+  white-space: nowrap;
+  background: white;
+}
+
+/* DELETE BUTTON */
+.btn-delete,
+button.hapus {
+  background: #e6e6e6;
+  color: #b00000;
+  border: none;
+  padding: 5px 8px;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-delete:hover,
 button.hapus:hover {
-  background-color: #b12b2b;
+  background: #d0d0d0;
 }
 
 /* TOMBOL FULLNAME */
@@ -51,34 +195,9 @@ button.hapus:hover {
   color: #f5cb0e;
 }
 
-/* Responsif: Agar tabel dapat digulirkan secara horizontal */
-.table-container {
-  overflow-x: auto;
-  margin-top: 20px;
-  max-width: 50%;
-}
-
-#search {
-  padding: 8px;
-  border-radius: 6px;
-  margin-right: 10px;
-}
-
-#tampil {
-  padding: 8px;
-  border-radius: 6px;
-}
-
-
-/* Styling input pencarian */
-input[type="search"] {
-  padding: 10px;
-  width: 250px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
+/* =========================
+   FORM PENDAFTARAN / EDIT
+========================= */
 
 form {
   display: flex;
@@ -104,6 +223,23 @@ form {
   gap: 8px;
 }
 
+label {
+  font-weight: normal;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="file"] {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
 .btn-simpan-container {
   display: flex;
   justify-content: center;
@@ -113,40 +249,26 @@ form {
 .btn-simpan {
   background: #222;
   color: white;
-  padding: 10px ;
+  padding: 10px;
   margin: 10px 0 18px 0;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   width: 100%;
-  font-weight: medium;
 }
 
 .btn-simpan:hover {
   background: #444;
 }
 
-label {
-  font-weight: bold;
-  font-size: 14px;
-}
-
-input[type="text"], input[type="email"], input[type="number"], input[type="date"], input[type="file"] {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-}
-
-.validation button {
-  display: inline-flex;  /* Tombol akan sejajar */
-  gap: 10px;  /* Memberikan spasi antara tombol */
-}
-
 .validation {
   align-self: flex-end;
 }
 
+.validation button {
+  display: inline-flex;
+  gap: 10px;
+}
 
 /* =========================
    DETAIL DATA SISWA
@@ -195,6 +317,36 @@ input[type="text"], input[type="email"], input[type="number"], input[type="date"
   color: #999;
   font-size: 14px;
   background: #f7f7f7;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-box:hover .photo-overlay {
+  opacity: 1;
+}
+
+.hidden-photo-input {
+  display: none;
 }
 
 #siswa-detail-container {
@@ -331,8 +483,17 @@ input[type="text"], input[type="email"], input[type="number"], input[type="date"
   font-weight: 800;
 }
 
-/* Responsive kecil */
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 1000px) {
+
+  .top-action {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .detail-layout {
     grid-template-columns: 1fr;
   }
@@ -340,39 +501,4 @@ input[type="text"], input[type="email"], input[type="number"], input[type="date"
   .student-card {
     min-height: auto;
   }
-}
-
-
-/* PHOTOBOX */
-.photo-box {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.photo-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.photo-box:hover .photo-overlay {
-  opacity: 1;
-}
-
-.hidden-photo-input {
-  display: none;
 }

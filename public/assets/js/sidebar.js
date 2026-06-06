@@ -26,7 +26,7 @@ function setupSidebarUserInfo() {
 
     if (emailElement) {
       emailElement.textContent = `👤 ${currentUser.email || currentUser.username || 'Admin'}`;
-      emailElement.href = '/admin/akun/detail-akun.html';
+      emailElement.href = '/admin/akun/profil.html';
     }
   } catch (error) {
     console.error('SETUP SIDEBAR USER INFO ERROR:', error);
@@ -52,5 +52,5 @@ function setupLogout() {
 
 function openAdminProfile(event) {
   event.preventDefault();
-  window.location.href = '/admin/akun/detail-akun.html';
+  window.location.href = '/admin/akun/profil.html';
 }
