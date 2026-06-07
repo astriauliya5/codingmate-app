@@ -83,6 +83,7 @@
 
   <script>
     let studentDetailData = null;
+    let approvedRecords = [];
     let activeLevelId = null;
 
     document.addEventListener('DOMContentLoaded', async function () {
@@ -123,9 +124,14 @@
         }
 
         studentDetailData = result;
+
+        approvedRecords = (result.records || []).filter(record => {
+          return record.status === 'terkirim';
+        });
+
         renderStudentDetail(result.student);
         renderCreditSections(result.levels);
-        renderLevelTabs(result.levels, result.records);
+        renderLevelTabs(result.levels, approvedRecords);
       } catch (error) {
         console.error('LOAD MENTOR STUDENT DETAIL ERROR:', error);
         container.innerHTML = `<div>Terjadi kesalahan saat mengambil detail siswa.</div>`;
@@ -139,11 +145,13 @@
       if (siswa.photo) {
         photoBox.innerHTML = `
           <img 
-            src="${escapeHtml(siswa.photo)}" 
+            src="${escapeAttribute(siswa.photo)}" 
             alt="Foto siswa" 
             style="width: 100%; height: 100%; object-fit: cover;"
           >
         `;
+      } else {
+        photoBox.innerHTML = `<span>Foto</span>`;
       }
 
       container.innerHTML = `
@@ -272,13 +280,14 @@
         return;
       }
 
-      activeLevelId = levels[0].level_id;
+      activeLevelId = Number(levels[0].level_id);
 
       tabsContainer.innerHTML = levels.map((level, index) => {
         return `
           <button
             type="button"
             class="level-tab ${index === 0 ? 'active' : ''}"
+            data-level-id="${level.level_id}"
             onclick="setActiveLevel(${level.level_id})"
           >
             ${escapeHtml(level.level_name || '-')}
@@ -293,24 +302,27 @@
       activeLevelId = Number(levelId);
 
       document.querySelectorAll('.level-tab').forEach(button => {
-        const isActive = button.getAttribute('onclick')?.includes(`setActiveLevel(${levelId})`);
-        button.classList.toggle('active', isActive);
+        button.classList.toggle(
+          'active',
+          Number(button.dataset.levelId) === Number(levelId)
+        );
       });
 
-      renderLevelRecords(studentDetailData.records || []);
+      renderLevelRecords(approvedRecords);
     }
 
     function renderLevelRecords(records) {
       const recordBody = document.getElementById('levelRecordBody');
 
-      const filteredRecords = records.filter(record => {
-        return Number(record.level_id) === Number(activeLevelId);
+      const filteredRecords = (records || []).filter(record => {
+        return Number(record.level_id) === Number(activeLevelId)
+          && record.status === 'terkirim';
       });
 
       if (filteredRecords.length === 0) {
         recordBody.innerHTML = `
           <tr>
-            <td colspan="3">Belum ada record summary untuk level ini.</td>
+            <td colspan="3">Belum ada record summary yang sudah disetujui untuk level ini.</td>
           </tr>
         `;
         return;
@@ -350,6 +362,10 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
     }
   </script>
 

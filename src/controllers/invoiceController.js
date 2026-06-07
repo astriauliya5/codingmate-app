@@ -44,6 +44,121 @@ function normalizeClassType(classType) {
   return classType === 'trial' ? 'trial' : 'reguler';
 }
 
+function formatDateOnly(dateValue) {
+  if (!dateValue) return null;
+
+  if (typeof dateValue === 'string') {
+    return dateValue.slice(0, 10);
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateString, days) {
+  const [year, month, day] = String(dateString).slice(0, 10).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  date.setDate(date.getDate() + days);
+
+  const resultYear = date.getFullYear();
+  const resultMonth = String(date.getMonth() + 1).padStart(2, '0');
+  const resultDay = String(date.getDate()).padStart(2, '0');
+
+  return `${resultYear}-${resultMonth}-${resultDay}`;
+}
+
+function getDayOfWeekMondayBased(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = String(dateString).slice(0, 10).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const jsDay = date.getDay();
+
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+function getMaxEndDate(routineRows) {
+  const dates = routineRows
+    .map(row => formatDateOnly(row.end_date))
+    .filter(Boolean)
+    .sort();
+
+  if (dates.length === 0) return null;
+
+  return dates[dates.length - 1];
+}
+
+function calculateExtendedRoutineEndDate(patterns, additionalCredit, baseDate, maxExpiredDate) {
+  if (!patterns || patterns.length === 0 || Number(additionalCredit) <= 0) {
+    return null;
+  }
+
+  const normalizedBaseDate = formatDateOnly(baseDate);
+  const normalizedExpiredDate = formatDateOnly(maxExpiredDate);
+
+  let currentDate;
+
+  if (normalizedBaseDate) {
+    currentDate = addDays(normalizedBaseDate, 1);
+  } else {
+    currentDate = patterns
+      .map(pattern => formatDateOnly(pattern.start_date))
+      .filter(Boolean)
+      .sort()[0];
+  }
+
+  if (!currentDate) return null;
+
+  const occurrences = [];
+  let guard = 0;
+
+  while (occurrences.length < Number(additionalCredit) && guard < 730) {
+    guard++;
+
+    const currentDay = getDayOfWeekMondayBased(currentDate);
+
+    patterns.forEach(pattern => {
+      const patternStartDate = formatDateOnly(pattern.start_date);
+
+      if (!patternStartDate) return;
+      if (currentDate < patternStartDate) return;
+      if (Number(pattern.day_of_week) !== Number(currentDay)) return;
+
+      if (normalizedExpiredDate && currentDate > normalizedExpiredDate) return;
+
+      occurrences.push({
+        date: currentDate,
+        start_time: pattern.start_time
+      });
+    });
+
+    currentDate = addDays(currentDate, 1);
+
+    if (normalizedExpiredDate && currentDate > normalizedExpiredDate) {
+      break;
+    }
+  }
+
+  occurrences.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return String(a.start_time).localeCompare(String(b.start_time));
+  });
+
+  if (occurrences.length < Number(additionalCredit)) {
+    return null;
+  }
+
+  return occurrences[Number(additionalCredit) - 1].date;
+}
+
 exports.getInvoices = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -418,7 +533,6 @@ exports.updateInvoiceStatus = async (req, res) => {
       });
     }
 
-    // Kalau status bukan lunas, hanya update status biasa
     if (status !== 'lunas') {
       await connection.query(
         `
@@ -436,7 +550,6 @@ exports.updateInvoiceStatus = async (req, res) => {
       });
     }
 
-    // Kalau status jadi lunas, baru proses kredit
     const paidAt = new Date();
 
     const [items] = await connection.query(
@@ -450,7 +563,9 @@ exports.updateInvoiceStatus = async (req, res) => {
     );
 
     for (const item of items) {
-      if (item.class_type === 'trial') {
+      const normalizedClassType = normalizeClassType(item.class_type);
+
+      if (normalizedClassType === 'trial') {
         const [existingTrialRows] = await connection.query(
           `
           SELECT id
@@ -488,38 +603,20 @@ exports.updateInvoiceStatus = async (req, res) => {
 
       let studentLevelId;
       let previousExpiredAt = null;
+      let previousRemainingCredit = 0;
 
-if (studentLevelRows.length > 0) {
-  studentLevelId = studentLevelRows[0].id;
-  previousExpiredAt = studentLevelRows[0].latest_expired_at;
-}
+      if (studentLevelRows.length > 0) {
+        studentLevelId = studentLevelRows[0].id;
+        previousExpiredAt = studentLevelRows[0].latest_expired_at;
+        previousRemainingCredit = Number(studentLevelRows[0].remaining_credit || 0);
+      }
 
-const expiredAt = calculateExpiredAt(
-  item.class_type,
-  item.credit_amount,
-  previousExpiredAt,
-  paidAt
-);
-
-if (item.class_type === 'reguler') {
-  await connection.query(
-    `
-    UPDATE routine_schedules
-    SET end_date = ?
-    WHERE student_id = ?
-    AND level_id = ?
-    AND class_type = 'reguler'
-    AND status = 'active'
-    AND (end_date IS NULL OR end_date < ?)
-    `,
-    [
-      expiredAt,
-      item.student_id,
-      item.level_id,
-      expiredAt
-    ]
-  );
-}
+      const expiredAt = calculateExpiredAt(
+        normalizedClassType,
+        item.credit_amount,
+        previousExpiredAt,
+        paidAt
+      );
 
       if (studentLevelRows.length === 0) {
         const [studentLevelResult] = await connection.query(
@@ -582,7 +679,7 @@ if (item.class_type === 'reguler') {
           item.id,
           item.student_id,
           item.level_id,
-          item.class_type,
+          normalizedClassType,
           studentLevelId,
           item.credit_amount,
           item.credit_amount,
@@ -590,6 +687,103 @@ if (item.class_type === 'reguler') {
           expiredAt
         ]
       );
+
+      /**
+       * Kalau jadwal rutin sudah pernah dibuat,
+       * perpanjang end_date berdasarkan jumlah kredit yang baru dibeli.
+       *
+       * Bukan berdasarkan expiredAt langsung.
+       */
+      if (normalizedClassType === 'reguler') {
+        const [activeRoutineRows] = await connection.query(
+          `
+          SELECT
+            id,
+            mentor_id,
+            start_date,
+            end_date,
+            day_of_week,
+            start_time,
+            end_time
+          FROM routine_schedules
+          WHERE student_id = ?
+          AND level_id = ?
+          AND class_type = 'reguler'
+          AND status = 'active'
+          ORDER BY start_date ASC, day_of_week ASC, start_time ASC
+          `,
+          [
+            item.student_id,
+            item.level_id
+          ]
+        );
+
+        if (activeRoutineRows.length > 0) {
+          const previousMaxEndDate = getMaxEndDate(activeRoutineRows);
+
+          const calculatedEndDate = calculateExtendedRoutineEndDate(
+            activeRoutineRows,
+            item.credit_amount,
+            previousMaxEndDate,
+            expiredAt
+          );
+
+          if (!calculatedEndDate) {
+            await connection.rollback();
+            return res.status(400).json({
+              message: 'Gagal memperpanjang jadwal rutin. Jumlah kredit tidak cukup dalam rentang tanggal expired.'
+            });
+          }
+
+          await connection.query(
+            `
+            UPDATE routine_schedules
+            SET end_date = ?
+            WHERE student_id = ?
+            AND level_id = ?
+            AND class_type = 'reguler'
+            AND status = 'active'
+            `,
+            [
+              calculatedEndDate,
+              item.student_id,
+              item.level_id
+            ]
+          );
+
+          /**
+           * Slot jadwal kosong mentor yang sekarang tertimpa jadwal rutin lanjutan
+           * ikut dibuat non-available.
+           */
+          for (const routine of activeRoutineRows) {
+            const extendStartDate = previousMaxEndDate
+              ? addDays(previousMaxEndDate, 1)
+              : formatDateOnly(routine.start_date);
+
+            if (!extendStartDate) continue;
+
+            await connection.query(
+              `
+              UPDATE empty_schedules
+              SET status = 'cancelled'
+              WHERE mentor_id = ?
+              AND available_date >= ?
+              AND available_date <= ?
+              AND status = 'active'
+              AND (? < end_time)
+              AND (? > start_time)
+              `,
+              [
+                routine.mentor_id,
+                extendStartDate,
+                calculatedEndDate,
+                routine.start_time,
+                routine.end_time
+              ]
+            );
+          }
+        }
+      }
     }
 
     await connection.query(

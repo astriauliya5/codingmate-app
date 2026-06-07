@@ -248,15 +248,14 @@
 }
 
 .summary-form {
-  width: 850px;
-  background: #f4f4f4;
-  border: 1px solid #555;
-  border-radius: 6px;
-  padding: 22px;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
+  max-width: 800px;
+  border: 1px solid #ccc; /* Border untuk form */
+  border-radius: 8px; /* Sudut melengkung */
+  padding: 20px; /* Padding dalam form */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sedikit bayangan agar lebih muncul */
 }
 
 .summary-form .form-group {
@@ -266,22 +265,18 @@
 }
 
 .summary-form label {
+  font-weight: bold;
   font-size: 14px;
-  font-weight: normal;
-  color: #222;
 }
 
 .summary-form input,
 .summary-form select,
 .summary-form textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #555;
+  width: 760px;
+  padding: 8px;
   border-radius: 6px;
-  background: #f7f7f7;
+  border: 1px solid #ccc;
   font-size: 14px;
-  box-sizing: border-box;
-  outline: none;
 }
 
 .summary-form input:focus,

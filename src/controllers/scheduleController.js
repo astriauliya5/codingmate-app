@@ -103,6 +103,179 @@ function addMinutes(timeValue, minutesToAdd) {
 //   return jsDay === 0 ? 6 : jsDay - 1;
 // }
 
+function getNextOccurrenceDate(startDate, targetDayOfWeek) {
+  let currentDate = startDate;
+  let guard = 0;
+
+  while (guard < 14) {
+    const currentDay = getDayOfWeekMondayBased(currentDate);
+
+    if (Number(currentDay) === Number(targetDayOfWeek)) {
+      return currentDate;
+    }
+
+    currentDate = addDays(currentDate, 1);
+    guard++;
+  }
+
+  return startDate;
+}
+
+function calculateRoutineEndDateByCredit(patterns, totalCredit, maxExpiredDate) {
+  if (!patterns || patterns.length === 0 || Number(totalCredit) <= 0) {
+    return null;
+  }
+
+  const normalizedExpiredDate = formatDateOnly(maxExpiredDate);
+
+  const earliestStartDate = patterns
+    .map(pattern => formatDateOnly(pattern.start_date))
+    .filter(Boolean)
+    .sort()[0];
+
+  if (!earliestStartDate) return null;
+
+  const occurrences = [];
+  let currentDate = earliestStartDate;
+  let guard = 0;
+
+  while (occurrences.length < Number(totalCredit) && guard < 730) {
+    guard++;
+
+    const currentDay = getDayOfWeekMondayBased(currentDate);
+
+    patterns.forEach(pattern => {
+      const patternStartDate = formatDateOnly(pattern.start_date);
+
+      if (!patternStartDate) return;
+      if (currentDate < patternStartDate) return;
+      if (Number(pattern.day_of_week) !== Number(currentDay)) return;
+      if (normalizedExpiredDate && currentDate > normalizedExpiredDate) return;
+
+      occurrences.push({
+        date: currentDate,
+        start_time: pattern.start_time
+      });
+    });
+
+    currentDate = addDays(currentDate, 1);
+
+    if (normalizedExpiredDate && currentDate > normalizedExpiredDate) {
+      break;
+    }
+  }
+
+  occurrences.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return String(a.start_time).localeCompare(String(b.start_time));
+  });
+
+  if (occurrences.length === 0) return null;
+
+  const targetIndex = Math.min(Number(totalCredit), occurrences.length) - 1;
+
+  return occurrences[targetIndex].date;
+}
+
+async function recalculateRoutineEndDates(connection, {
+  studentId,
+  levelId,
+  mentorId,
+  classType,
+  remainingCredit,
+  maxExpiredDate
+}) {
+  const [activeRoutineRows] = await connection.query(
+    `
+    SELECT
+      id,
+      mentor_id,
+      start_date,
+      day_of_week,
+      start_time,
+      end_time
+    FROM routine_schedules
+    WHERE student_id = ?
+    AND level_id = ?
+    AND mentor_id = ?
+    AND class_type = ?
+    AND status = 'active'
+    ORDER BY start_date ASC, day_of_week ASC, start_time ASC
+    `,
+    [
+      studentId,
+      levelId,
+      mentorId,
+      classType
+    ]
+  );
+
+  if (activeRoutineRows.length === 0) {
+    return null;
+  }
+
+  const calculatedEndDate = calculateRoutineEndDateByCredit(
+    activeRoutineRows,
+    remainingCredit,
+    maxExpiredDate
+  );
+
+  if (!calculatedEndDate) {
+    return null;
+  }
+
+  await connection.query(
+    `
+    UPDATE routine_schedules
+    SET end_date = ?
+    WHERE student_id = ?
+    AND level_id = ?
+    AND mentor_id = ?
+    AND class_type = ?
+    AND status = 'active'
+    `,
+    [
+      calculatedEndDate,
+      studentId,
+      levelId,
+      mentorId,
+      classType
+    ]
+  );
+
+  /**
+   * Jadwal kosong yang ketimpa jadwal rutin dibuat non-available
+   * hanya sampai calculatedEndDate, bukan sampai expired.
+   */
+  for (const routine of activeRoutineRows) {
+    const routineStartDate = formatDateOnly(routine.start_date);
+
+    if (!routineStartDate) continue;
+
+    await connection.query(
+      `
+      UPDATE empty_schedules
+      SET status = 'cancelled'
+      WHERE mentor_id = ?
+      AND available_date >= ?
+      AND available_date <= ?
+      AND status = 'active'
+      AND (? < end_time)
+      AND (? > start_time)
+      `,
+      [
+        routine.mentor_id,
+        routineStartDate,
+        calculatedEndDate,
+        routine.start_time,
+        routine.end_time
+      ]
+    );
+  }
+
+  return calculatedEndDate;
+}
+
 exports.getSchedules = async (req, res) => {
   try {
     let query = `
@@ -469,7 +642,7 @@ exports.createRoutineSchedule = async (req, res) => {
 
     const studentLevel = studentLevelRows[0];
 
-    if (studentLevel.remaining_credit <= 0) {
+    if (Number(studentLevel.remaining_credit) <= 0) {
       await connection.rollback();
       return res.status(400).json({
         message: 'Sisa kredit siswa untuk level ini sudah habis'
@@ -503,26 +676,35 @@ exports.createRoutineSchedule = async (req, res) => {
       });
     }
 
-    let endDate;
+    let maxExpiredDate = null;
+    let temporaryEndDate = null;
 
     if (normalizedClassType === 'trial') {
-      endDate = start_date;
+      maxExpiredDate = start_date;
+      temporaryEndDate = start_date;
     } else {
-      endDate = formatDateOnly(studentLevel.latest_expired_at);
+      maxExpiredDate = formatDateOnly(studentLevel.latest_expired_at);
 
-      if (!endDate) {
+      if (!maxExpiredDate) {
         await connection.rollback();
         return res.status(400).json({
           message: 'Tanggal expired kredit belum tersedia'
         });
       }
 
-      if (new Date(start_date) > new Date(endDate)) {
+      if (new Date(start_date) > new Date(maxExpiredDate)) {
         await connection.rollback();
         return res.status(400).json({
           message: 'Tanggal mulai jadwal melebihi tanggal expired kredit'
         });
       }
+
+      /**
+       * Ini hanya sementara untuk validasi bentrok saat insert.
+       * End date final akan dihitung ulang berdasarkan remaining_credit
+       * setelah jadwal baru masuk.
+       */
+      temporaryEndDate = maxExpiredDate;
     }
 
     const [conflictRows] = await connection.query(
@@ -546,7 +728,7 @@ exports.createRoutineSchedule = async (req, res) => {
         dayOfWeek,
         start_time,
         end_time,
-        endDate,
+        temporaryEndDate,
         start_date
       ]
     );
@@ -557,27 +739,6 @@ exports.createRoutineSchedule = async (req, res) => {
         message: 'Mentor sudah memiliki jadwal aktif pada tanggal/jam tersebut'
       });
     }
-
-await connection.query(
-  `
-  UPDATE empty_schedules
-  SET status = 'cancelled'
-  WHERE mentor_id = ?
-  AND available_date >= ?
-  AND available_date <= ?
-  AND status = 'active'
-  AND (
-    (? < end_time) AND (? > start_time)
-  )
-  `,
-  [
-    mentor_id,
-    start_date,
-    endDate,
-    start_time,
-    end_time
-  ]
-);
 
     if (!studentLevel.mentor_id) {
       await connection.query(
@@ -613,12 +774,48 @@ await connection.query(
         level_id,
         normalizedClassType,
         start_date,
-        endDate,
+        temporaryEndDate,
         dayOfWeek,
         start_time,
         end_time
       ]
     );
+
+    if (normalizedClassType === 'reguler') {
+      const calculatedEndDate = await recalculateRoutineEndDates(connection, {
+        studentId: student_id,
+        levelId: level_id,
+        mentorId: mentor_id,
+        classType: normalizedClassType,
+        remainingCredit: studentLevel.remaining_credit,
+        maxExpiredDate
+      });
+
+      if (!calculatedEndDate) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: 'Gagal menghitung batas akhir jadwal berdasarkan sisa kredit'
+        });
+      }
+    } else {
+      await connection.query(
+        `
+        UPDATE empty_schedules
+        SET status = 'cancelled'
+        WHERE mentor_id = ?
+        AND available_date = ?
+        AND status = 'active'
+        AND (? < end_time)
+        AND (? > start_time)
+        `,
+        [
+          mentor_id,
+          start_date,
+          start_time,
+          end_time
+        ]
+      );
+    }
 
     await connection.commit();
 
@@ -662,7 +859,7 @@ exports.updateRoutineSchedule = async (req, res) => {
       });
     }
 
-    if (Number(day_of_week) < 0 || Number(day_of_week) > 6) {
+    if (Number(day_of_week) < 0 || Number(day_of_week) > 5) {
       await connection.rollback();
       return res.status(400).json({
         message: 'Hari jadwal tidak valid'
@@ -707,6 +904,41 @@ exports.updateRoutineSchedule = async (req, res) => {
 
     const schedule = scheduleRows[0];
 
+    if (req.user.role === 'mentor' && Number(schedule.mentor_id) !== Number(req.user.id)) {
+      await connection.rollback();
+      return res.status(403).json({
+        message: 'Mentor hanya bisa mengubah jadwal miliknya sendiri'
+      });
+    }
+
+    const [studentLevelRows] = await connection.query(
+      `
+      SELECT
+        id,
+        remaining_credit,
+        latest_expired_at
+      FROM student_levels
+      WHERE student_id = ?
+      AND level_id = ?
+      LIMIT 1
+      FOR UPDATE
+      `,
+      [
+        schedule.student_id,
+        schedule.level_id
+      ]
+    );
+
+    if (studentLevelRows.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: 'Data kredit siswa untuk jadwal ini tidak ditemukan'
+      });
+    }
+
+    const studentLevel = studentLevelRows[0];
+    const maxExpiredDate = formatDateOnly(studentLevel.latest_expired_at);
+
     const [conflictRows] = await connection.query(
       `
       SELECT id
@@ -718,6 +950,10 @@ exports.updateRoutineSchedule = async (req, res) => {
       AND (
         (? < end_time) AND (? > start_time)
       )
+      AND (
+        start_date <= ?
+        AND (end_date IS NULL OR end_date >= ?)
+      )
       LIMIT 1
       `,
       [
@@ -725,7 +961,9 @@ exports.updateRoutineSchedule = async (req, res) => {
         day_of_week,
         id,
         start_time,
-        end_time
+        end_time,
+        schedule.end_date,
+        schedule.start_date
       ]
     );
 
@@ -752,6 +990,24 @@ exports.updateRoutineSchedule = async (req, res) => {
         id
       ]
     );
+
+    if (schedule.class_type === 'reguler') {
+      const calculatedEndDate = await recalculateRoutineEndDates(connection, {
+        studentId: schedule.student_id,
+        levelId: schedule.level_id,
+        mentorId: schedule.mentor_id,
+        classType: schedule.class_type,
+        remainingCredit: studentLevel.remaining_credit,
+        maxExpiredDate
+      });
+
+      if (!calculatedEndDate) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: 'Gagal menghitung ulang batas akhir jadwal berdasarkan sisa kredit'
+        });
+      }
+    }
 
     await connection.commit();
 
@@ -831,6 +1087,13 @@ exports.swapSchedule = async (req, res) => {
 
     const schedule = scheduleRows[0];
 
+    if (req.user.role === 'mentor' && Number(schedule.mentor_id) !== Number(req.user.id)) {
+      await connection.rollback();
+      return res.status(403).json({
+        message: 'Mentor hanya bisa menukar jadwal miliknya sendiri'
+      });
+    }
+
     const originalDay = getDayOfWeekMondayBased(original_date);
     const newDay = getDayOfWeekMondayBased(new_date);
 
@@ -862,16 +1125,15 @@ exports.swapSchedule = async (req, res) => {
       WHERE routine_schedule_id = ?
       AND original_date = ?
       LIMIT 1
+      FOR UPDATE
       `,
       [routine_schedule_id, original_date]
     );
 
-    if (existingExceptionRows.length > 0) {
-      await connection.rollback();
-      return res.status(400).json({
-        message: 'Pertemuan pada tanggal tersebut sudah pernah ditukar'
-      });
-    }
+    const existingExceptionId =
+      existingExceptionRows.length > 0
+        ? existingExceptionRows[0].id
+        : null;
 
     const [routineConflictRows] = await connection.query(
       `
@@ -884,6 +1146,10 @@ exports.swapSchedule = async (req, res) => {
       AND (
         (? < end_time) AND (? > start_time)
       )
+      AND (
+        start_date <= ?
+        AND (end_date IS NULL OR end_date >= ?)
+      )
       LIMIT 1
       `,
       [
@@ -891,7 +1157,9 @@ exports.swapSchedule = async (req, res) => {
         newDay,
         routine_schedule_id,
         new_start_time,
-        new_end_time
+        new_end_time,
+        new_date,
+        new_date
       ]
     );
 
@@ -912,13 +1180,16 @@ exports.swapSchedule = async (req, res) => {
       AND (
         (? < se.new_end_time) AND (? > se.new_start_time)
       )
+      AND (? IS NULL OR se.id != ?)
       LIMIT 1
       `,
       [
         schedule.mentor_id,
         new_date,
         new_start_time,
-        new_end_time
+        new_end_time,
+        existingExceptionId,
+        existingExceptionId
       ]
     );
 
@@ -934,66 +1205,116 @@ exports.swapSchedule = async (req, res) => {
     const secondSlotStart = firstSlotEnd;
     const secondSlotEnd = normalizeTime(new_end_time);
 
-    const [availableRows] = await connection.query(
+    if (req.user.role === 'admin') {
+      const [availableRows] = await connection.query(
+        `
+        SELECT id, start_time, end_time
+        FROM empty_schedules
+        WHERE mentor_id = ?
+        AND available_date = ?
+        AND status = 'active'
+        AND (
+          (start_time = ? AND end_time = ?)
+          OR
+          (start_time = ? AND end_time = ?)
+        )
+        `,
+        [
+          schedule.mentor_id,
+          new_date,
+          firstSlotStart,
+          firstSlotEnd,
+          secondSlotStart,
+          secondSlotEnd
+        ]
+      );
+
+      if (availableRows.length < 2) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: 'Mentor harus memiliki 2 slot jadwal kosong berurutan untuk durasi 1 jam'
+        });
+      }
+    }
+
+    let exceptionId;
+
+    if (existingExceptionId) {
+      await connection.query(
+        `
+        UPDATE schedule_exceptions
+        SET
+          original_start_time = ?,
+          original_end_time = ?,
+          new_date = ?,
+          new_start_time = ?,
+          new_end_time = ?
+        WHERE id = ?
+        `,
+        [
+          schedule.start_time,
+          schedule.end_time,
+          new_date,
+          new_start_time,
+          new_end_time,
+          existingExceptionId
+        ]
+      );
+
+      exceptionId = existingExceptionId;
+    } else {
+      const [result] = await connection.query(
+        `
+        INSERT INTO schedule_exceptions
+        (
+          routine_schedule_id,
+          original_date,
+          original_start_time,
+          original_end_time,
+          new_date,
+          new_start_time,
+          new_end_time
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          routine_schedule_id,
+          original_date,
+          schedule.start_time,
+          schedule.end_time,
+          new_date,
+          new_start_time,
+          new_end_time
+        ]
+      );
+
+      exceptionId = result.insertId;
+    }
+
+    await connection.query(
       `
-      SELECT id, start_time, end_time
-      FROM empty_schedules
+      DELETE FROM empty_schedules
       WHERE mentor_id = ?
       AND available_date = ?
       AND status = 'active'
-      AND (
-        (start_time = ? AND end_time = ?)
-        OR
-        (start_time = ? AND end_time = ?)
-      )
+      AND start_time < ?
+      AND end_time > ?
       `,
       [
         schedule.mentor_id,
         new_date,
-        firstSlotStart,
-        firstSlotEnd,
-        secondSlotStart,
-        secondSlotEnd
-      ]
-    );
-
-    if (availableRows.length < 2) {
-      await connection.rollback();
-      return res.status(400).json({
-        message: 'Mentor harus memiliki 2 slot jadwal kosong berurutan untuk durasi 1 jam'
-      });
-    }
-
-    const [result] = await connection.query(
-      `
-      INSERT INTO schedule_exceptions
-      (
-        routine_schedule_id,
-        original_date,
-        original_start_time,
-        original_end_time,
-        new_date,
-        new_start_time,
-        new_end_time
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        routine_schedule_id,
-        original_date,
-        schedule.start_time,
-        schedule.end_time,
-        new_date,
-        new_start_time,
-        new_end_time
+        secondSlotEnd,
+        firstSlotStart
       ]
     );
 
     await connection.commit();
 
-    res.status(201).json({
-      message: 'Tukar jadwal berhasil disimpan',
-      id: result.insertId
+    res.status(existingExceptionId ? 200 : 201).json({
+      message: existingExceptionId
+        ? 'Tukar jadwal berhasil diperbarui'
+        : 'Tukar jadwal berhasil disimpan',
+      id: exceptionId
     });
   } catch (error) {
     await connection.rollback();

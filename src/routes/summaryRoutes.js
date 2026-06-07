@@ -8,6 +8,7 @@ const {
   getMentorSummaries,
   getMentorSummaryOptions,
   getMentorSummaryById,
+  getMentorClassDates,
   createSummary,
   deleteMentorSummary
 } = require('../controllers/summaryController');
@@ -19,10 +20,12 @@ router.get('/', verifyToken, allowRoles('admin'), getSummaries);
 router.get('/admin/:id', verifyToken, allowRoles('admin'), getSummaryById);
 router.patch('/:id/approve', verifyToken, allowRoles('admin'), approveSummary);
 
-// Mentor
+// Mentor routes
 router.get('/mentor', verifyToken, allowRoles('mentor'), getMentorSummaries);
 router.get('/mentor/options', verifyToken, allowRoles('mentor'), getMentorSummaryOptions);
+router.get('/mentor/class-dates', verifyToken, allowRoles('mentor'), getMentorClassDates);
 router.get('/mentor/:id', verifyToken, allowRoles('mentor'), getMentorSummaryById);
+
 router.post('/', verifyToken, allowRoles('mentor'), createSummary);
 router.delete('/:id', verifyToken, allowRoles('mentor'), deleteMentorSummary);
 

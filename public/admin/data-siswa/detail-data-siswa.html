@@ -76,6 +76,7 @@
 
   <script>
     let currentStudent = null;
+    let currentLevelRecords = [];
     let activeLevelId = null;
 
     document.addEventListener('DOMContentLoaded', async function () {
@@ -103,6 +104,7 @@
         document.getElementById('siswa-detail-container').innerHTML = `
           <div>ID siswa tidak ditemukan.</div>
         `;
+        renderEmptyLevelRecord();
         return;
       }
 
@@ -120,6 +122,7 @@
           document.getElementById('siswa-detail-container').innerHTML = `
             <div>${escapeHtml(siswa.message || 'Data siswa tidak ditemukan.')}</div>
           `;
+          renderEmptyLevelRecord();
           return;
         }
 
@@ -128,12 +131,14 @@
         renderStudentForm(siswa);
         renderCreditInfo(siswa.levels || []);
         renderLevelTabs(siswa.levels || []);
-        renderLevelRecords(siswa.records || []);
+
+        await loadLevelRecords(siswaId);
       } catch (error) {
         console.error('DETAIL STUDENT ERROR:', error);
         document.getElementById('siswa-detail-container').innerHTML = `
           <div>Data siswa tidak ditemukan.</div>
         `;
+        renderEmptyLevelRecord();
       }
     }
 
@@ -238,7 +243,7 @@
 
         <input type="file" id="photo" class="hidden-photo-input" accept="image/*" />
       `;
-      
+
       const photoInput = document.getElementById('photo');
 
       photoInput.addEventListener('change', function () {
@@ -377,13 +382,14 @@
         return;
       }
 
-      activeLevelId = levels[0].level_id;
+      activeLevelId = Number(levels[0].level_id);
 
       tabsContainer.innerHTML = levels.map((level, index) => {
         return `
           <button
             type="button"
             class="level-tab ${index === 0 ? 'active' : ''}"
+            data-level-id="${level.level_id}"
             onclick="setActiveLevel(${level.level_id})"
           >
             ${escapeHtml(level.level_name || '-')}
@@ -396,11 +402,45 @@
       activeLevelId = Number(levelId);
 
       document.querySelectorAll('.level-tab').forEach(button => {
-        const onclickValue = button.getAttribute('onclick') || '';
-        button.classList.toggle('active', onclickValue.includes(`setActiveLevel(${levelId})`));
+        button.classList.toggle(
+          'active',
+          Number(button.dataset.levelId) === Number(levelId)
+        );
       });
 
-      renderLevelRecords(currentStudent?.records || []);
+      renderLevelRecords(currentLevelRecords);
+    }
+
+    async function loadLevelRecords(studentId) {
+      try {
+        const response = await fetch('/api/summaries', {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET SUMMARIES ERROR:', result);
+          currentLevelRecords = [];
+          renderLevelRecords(currentLevelRecords);
+          return;
+        }
+
+        const summaries = Array.isArray(result) ? result : [];
+
+        currentLevelRecords = summaries.filter(summary => {
+          return Number(summary.student_id) === Number(studentId)
+            && summary.status === 'terkirim';
+        });
+
+        renderLevelRecords(currentLevelRecords);
+      } catch (error) {
+        console.error('LOAD LEVEL RECORD ERROR:', error);
+        currentLevelRecords = [];
+        renderLevelRecords(currentLevelRecords);
+      }
     }
 
     function renderLevelRecords(records) {
@@ -431,6 +471,23 @@
           </tr>
         `;
       }).join('');
+    }
+
+    function renderEmptyLevelRecord() {
+      const recordBody = document.getElementById('levelRecordBody');
+      const tabsContainer = document.getElementById('levelTabs');
+
+      if (tabsContainer) {
+        tabsContainer.innerHTML = `<button type="button" class="level-tab active">-</button>`;
+      }
+
+      if (recordBody) {
+        recordBody.innerHTML = `
+          <tr>
+            <td colspan="3">Belum ada level record.</td>
+          </tr>
+        `;
+      }
     }
 
     function formatDate(dateValue) {

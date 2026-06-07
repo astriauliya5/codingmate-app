@@ -1,5 +1,66 @@
 const db = require('../config/db');
 
+function formatDateOnly(dateValue) {
+  if (!dateValue) return null;
+
+  if (typeof dateValue === 'string') {
+    return dateValue.slice(0, 10);
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(dateValue) {
+  const dateString = formatDateOnly(dateValue);
+
+  if (!dateString) return '-';
+
+  const [year, month, day] = dateString.split('-');
+
+  return `${day}/${month}/${year}`;
+}
+
+function addDays(dateString, days) {
+  const [year, month, day] = String(dateString).slice(0, 10).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  date.setDate(date.getDate() + days);
+
+  const resultYear = date.getFullYear();
+  const resultMonth = String(date.getMonth() + 1).padStart(2, '0');
+  const resultDay = String(date.getDate()).padStart(2, '0');
+
+  return `${resultYear}-${resultMonth}-${resultDay}`;
+}
+
+function getDayOfWeekMondayBased(dateString) {
+  if (!dateString) return null;
+
+  const [year, month, day] = String(dateString).slice(0, 10).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  const jsDay = date.getDay();
+
+  return jsDay === 0 ? 6 : jsDay - 1;
+}
+
+function timeForDisplay(timeValue) {
+  if (!timeValue) return '';
+  return String(timeValue).slice(0, 5);
+}
+
+function formatClassType(value) {
+  return value === 'trial' ? 'Trial' : 'Reguler';
+}
+
 exports.getSummaries = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -554,6 +615,220 @@ exports.getMentorSummaryById = async (req, res) => {
 
     res.status(500).json({
       message: 'Gagal mengambil detail summary mentor',
+      error: error.sqlMessage || error.message
+    });
+  }
+};
+
+exports.getMentorClassDates = async (req, res) => {
+  try {
+    const mentorId = req.user.id;
+    const { student_id, level_id } = req.query;
+
+    if (!student_id || !level_id) {
+      return res.status(400).json({
+        message: 'student_id dan level_id wajib diisi'
+      });
+    }
+
+    const [studentLevelRows] = await db.query(
+      `
+      SELECT
+        id,
+        remaining_credit,
+        latest_expired_at
+      FROM student_levels
+      WHERE student_id = ?
+      AND level_id = ?
+      AND mentor_id = ?
+      LIMIT 1
+      `,
+      [student_id, level_id, mentorId]
+    );
+
+    if (studentLevelRows.length === 0) {
+      return res.status(400).json({
+        message: 'Siswa dan level ini tidak terdaftar untuk mentor yang sedang login'
+      });
+    }
+
+    const studentLevel = studentLevelRows[0];
+    const remainingCredit = Number(studentLevel.remaining_credit || 0);
+    const latestExpiredAt = formatDateOnly(studentLevel.latest_expired_at);
+
+    if (remainingCredit <= 0) {
+      return res.json({
+        class_dates: []
+      });
+    }
+
+    const [routineRows] = await db.query(
+      `
+      SELECT
+        rs.id AS routine_schedule_id,
+        rs.student_id,
+        rs.level_id,
+        rs.mentor_id,
+        rs.day_of_week,
+        rs.start_date,
+        rs.end_date,
+        rs.start_time,
+        rs.end_time,
+        rs.class_type,
+        s.full_name AS student_name,
+        s.nickname,
+        l.level_name
+      FROM routine_schedules rs
+      JOIN students s ON s.id = rs.student_id
+      JOIN levels l ON l.id = rs.level_id
+      WHERE rs.student_id = ?
+      AND rs.level_id = ?
+      AND rs.mentor_id = ?
+      AND rs.status = 'active'
+      AND s.deleted_at IS NULL
+      ORDER BY rs.start_date ASC, rs.day_of_week ASC, rs.start_time ASC
+      `,
+      [student_id, level_id, mentorId]
+    );
+
+    if (routineRows.length === 0) {
+      return res.json({
+        class_dates: []
+      });
+    }
+
+    const routineIds = routineRows.map(row => row.routine_schedule_id);
+
+    const [exceptionRows] = await db.query(
+      `
+      SELECT
+        se.id AS exception_id,
+        se.routine_schedule_id,
+        se.original_date,
+        se.original_start_time,
+        se.original_end_time,
+        se.new_date,
+        se.new_start_time,
+        se.new_end_time
+      FROM schedule_exceptions se
+      WHERE se.routine_schedule_id IN (?)
+      ORDER BY se.new_date ASC, se.new_start_time ASC
+      `,
+      [routineIds]
+    );
+
+    const [summaryRows] = await db.query(
+      `
+      SELECT
+        id,
+        class_date
+      FROM summaries
+      WHERE student_id = ?
+      AND mentor_id = ?
+      AND level_id = ?
+      `,
+      [student_id, mentorId, level_id]
+    );
+
+    const usedSummaryDates = new Set(
+      summaryRows
+        .map(summary => formatDateOnly(summary.class_date))
+        .filter(Boolean)
+    );
+
+    const exceptionByOriginalKey = new Map();
+
+    exceptionRows.forEach(exception => {
+      const originalDate = formatDateOnly(exception.original_date);
+
+      if (!originalDate) return;
+
+      exceptionByOriginalKey.set(
+        `${exception.routine_schedule_id}_${originalDate}`,
+        exception
+      );
+    });
+
+    const today = formatDateOnly(new Date());
+    const generatedDates = [];
+
+    routineRows.forEach(routine => {
+      const routineStartDate = formatDateOnly(routine.start_date);
+      const routineEndDate = formatDateOnly(routine.end_date) || latestExpiredAt;
+
+      if (!routineStartDate) return;
+
+      let currentDate = routineStartDate;
+      let guard = 0;
+
+      while (guard < 500) {
+        guard++;
+
+        const currentDay = getDayOfWeekMondayBased(currentDate);
+
+        if (Number(currentDay) === Number(routine.day_of_week)) {
+          const exceptionKey = `${routine.routine_schedule_id}_${currentDate}`;
+          const exception = exceptionByOriginalKey.get(exceptionKey);
+
+          let finalDate = currentDate;
+          let startTime = routine.start_time;
+          let endTime = routine.end_time;
+          let source = 'routine';
+          let exceptionId = null;
+
+          if (exception) {
+            finalDate = formatDateOnly(exception.new_date);
+            startTime = exception.new_start_time;
+            endTime = exception.new_end_time;
+            source = 'exception';
+            exceptionId = exception.exception_id;
+          }
+
+          const finalDateOnly = formatDateOnly(finalDate);
+
+          const isAfterToday = finalDateOnly > today;
+          const isAfterExpired = routineEndDate && finalDateOnly > routineEndDate;
+          const alreadySummarized = usedSummaryDates.has(finalDateOnly);
+
+          if (!isAfterToday && !isAfterExpired && !alreadySummarized) {
+            generatedDates.push({
+              date: finalDateOnly,
+              start_time: timeForDisplay(startTime),
+              end_time: timeForDisplay(endTime),
+              class_type: routine.class_type || 'reguler',
+              source,
+              routine_schedule_id: routine.routine_schedule_id,
+              exception_id: exceptionId,
+              label: `${formatDateLabel(finalDateOnly)} | ${timeForDisplay(startTime)} - ${timeForDisplay(endTime)} | ${formatClassType(routine.class_type)}${source === 'exception' ? ' | Tukar Jadwal' : ''}`
+            });
+          }
+        }
+
+        currentDate = addDays(currentDate, 1);
+
+        if (routineEndDate && currentDate > routineEndDate) {
+          break;
+        }
+
+        if (currentDate > today) {
+          break;
+        }
+      }
+    });
+
+    generatedDates.sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return String(b.start_time).localeCompare(String(a.start_time));
+    });
+
+    res.json({
+      class_dates: generatedDates.slice(0, remainingCredit)
+    });
+  } catch (error) {
+    console.error('GET MENTOR CLASS DATES ERROR:', error);
+
+    res.status(500).json({
+      message: 'Gagal mengambil tanggal kelas mentor',
       error: error.sqlMessage || error.message
     });
   }

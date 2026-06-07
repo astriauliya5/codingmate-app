@@ -28,19 +28,21 @@
         <div class="form-group">
           <label for="level">Level</label>
           <select id="level" name="level" required>
-            <option value="">Pilih level</option>
+            <option value="">Pilih siswa terlebih dahulu</option>
           </select>
         </div>
 
         <div class="form-group form-date">
           <label for="tanggal-kelas">Tanggal Kelas</label>
-          <input type="date" id="tanggal-kelas" name="tanggalKelas" required />
+          <select id="tanggal-kelas" name="tanggalKelas" required>
+            <option value="">Pilih siswa dan level terlebih dahulu</option>
+          </select>
         </div>
 
         <div class="form-group">
           <label for="jenis-kelas">Jenis Kelas</label>
           <select id="jenis-kelas" name="jenisKelas" required>
-            <option value="">Pilih jenis kelas</option>
+            <option value="">Pilih tanggal kelas terlebih dahulu</option>
             <option value="reguler">Reguler</option>
             <option value="trial">Trial</option>
           </select>
@@ -71,9 +73,38 @@
       await loadSummaryOptions();
 
       const studentSelect = document.getElementById('nama-siswa');
+      const levelSelect = document.getElementById('level');
+      const classDateSelect = document.getElementById('tanggal-kelas');
 
       studentSelect.addEventListener('change', function () {
         renderLevelOptions(this.value);
+        resetClassDateOptions();
+        resetClassType();
+      });
+
+      levelSelect.addEventListener('change', async function () {
+        const studentId = studentSelect.value;
+        const levelId = this.value;
+
+        resetClassDateOptions();
+        resetClassType();
+
+        if (!studentId || !levelId) return;
+
+        await loadClassDates(studentId, levelId);
+      });
+
+      classDateSelect.addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const classType = selectedOption?.dataset?.classType || '';
+
+        const classTypeSelect = document.getElementById('jenis-kelas');
+
+        if (classType) {
+          classTypeSelect.value = classType;
+        } else {
+          classTypeSelect.value = '';
+        }
       });
 
       document.getElementById('summaryForm').addEventListener('submit', submitSummary);
@@ -99,7 +130,7 @@
           return;
         }
 
-        summaryOptions = result;
+        summaryOptions = Array.isArray(result) ? result : [];
         renderStudentOptions();
       } catch (error) {
         console.error('LOAD SUMMARY OPTIONS ERROR:', error);
@@ -166,6 +197,128 @@
       `;
     }
 
+    async function loadClassDates(studentId, levelId) {
+      const classDateSelect = document.getElementById('tanggal-kelas');
+
+      classDateSelect.innerHTML = `<option value="">Memuat tanggal kelas...</option>`;
+
+      try {
+        const response = await fetch(`/api/summaries/mentor/class-dates?student_id=${studentId}&level_id=${levelId}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error('GET CLASS DATES ERROR:', result);
+          alert(result.message || 'Gagal mengambil tanggal kelas.');
+          resetClassDateOptions('Gagal memuat tanggal kelas');
+          return;
+        }
+
+        const options = result.class_dates || [];
+
+        if (options.length === 0) {
+          classDateSelect.innerHTML = `<option value="">Belum ada jadwal yang tersedia untuk dibuatkan summary</option>`;
+          return;
+        }
+
+        classDateSelect.innerHTML = `
+          <option value="">Pilih tanggal kelas</option>
+          ${options.map(option => {
+            return `
+              <option
+                value="${option.date}"
+                data-start-time="${option.start_time}"
+                data-end-time="${option.end_time}"
+                data-class-type="${option.class_type}"
+                data-routine-schedule-id="${option.routine_schedule_id || ''}"
+                data-exception-id="${option.exception_id || ''}"
+              >
+                ${escapeHtml(option.label)}
+              </option>
+            `;
+          }).join('')}
+        `;
+      } catch (error) {
+        console.error('LOAD CLASS DATES ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil tanggal kelas.');
+        resetClassDateOptions('Gagal memuat tanggal kelas');
+      }
+    }
+
+    // function buildClassDateOptions(routines, exceptions) {
+    //   const options = [];
+    //   const today = new Date();
+
+    //   const startDate = new Date(today);
+    //   startDate.setDate(today.getDate() - 28);
+
+    //   const endDate = new Date(today);
+    //   endDate.setDate(today.getDate() + 28);
+
+    //   const exceptionOriginalDates = new Set();
+
+    //   exceptions.forEach(exception => {
+    //     const originalDate = normalizeDate(exception.original_date);
+    //     const newDate = normalizeDate(exception.new_date);
+
+    //     if (originalDate) {
+    //       exceptionOriginalDates.add(`${exception.routine_schedule_id}|${originalDate}`);
+    //     }
+
+    //     if (newDate) {
+    //       options.push({
+    //         date: newDate,
+    //         start_time: timeForInput(exception.new_start_time),
+    //         end_time: timeForInput(exception.new_end_time),
+    //         class_type: exception.class_type || 'reguler',
+    //         routine_schedule_id: exception.routine_schedule_id,
+    //         exception_id: exception.exception_id,
+    //         label: `${formatDateLabel(newDate)} | ${timeForInput(exception.new_start_time)} - ${timeForInput(exception.new_end_time)} | ${formatClassType(exception.class_type)} | Tukar Jadwal`
+    //       });
+    //     }
+    //   });
+
+    //   for (
+    //     let date = new Date(startDate);
+    //     date <= endDate;
+    //     date.setDate(date.getDate() + 1)
+    //   ) {
+    //     const dateString = toDateString(date);
+    //     const dayOfWeek = getDayOfWeekMondayBased(dateString);
+
+    //     routines.forEach(routine => {
+    //       if (Number(routine.day_of_week) !== Number(dayOfWeek)) return;
+
+    //       const exceptionKey = `${routine.routine_schedule_id}|${dateString}`;
+
+    //       if (exceptionOriginalDates.has(exceptionKey)) return;
+
+    //       options.push({
+    //         date: dateString,
+    //         start_time: timeForInput(routine.start_time),
+    //         end_time: timeForInput(routine.end_time),
+    //         class_type: routine.class_type || 'reguler',
+    //         routine_schedule_id: routine.routine_schedule_id,
+    //         exception_id: null,
+    //         label: `${formatDateLabel(dateString)} | ${timeForInput(routine.start_time)} - ${timeForInput(routine.end_time)} | ${formatClassType(routine.class_type)}`
+    //       });
+    //     });
+    //   }
+
+    //   options.sort((a, b) => {
+    //     const dateA = new Date(`${a.date}T${a.start_time || '00:00'}`);
+    //     const dateB = new Date(`${b.date}T${b.start_time || '00:00'}`);
+
+    //     return dateB - dateA;
+    //   });
+
+    //   return options;
+    // }
+
     async function submitSummary(event) {
       event.preventDefault();
 
@@ -212,6 +365,59 @@
         alert('Terjadi kesalahan saat menyimpan summary.');
       }
     }
+
+    function resetClassDateOptions(message = 'Pilih siswa dan level terlebih dahulu') {
+      document.getElementById('tanggal-kelas').innerHTML = `
+        <option value="">${escapeHtml(message)}</option>
+      `;
+    }
+
+    function resetClassType() {
+      document.getElementById('jenis-kelas').value = '';
+    }
+
+    // function getDayOfWeekMondayBased(dateString) {
+    //   if (!dateString) return null;
+
+    //   const [year, month, day] = dateString.split('-').map(Number);
+    //   const date = new Date(year, month - 1, day);
+    //   const jsDay = date.getDay();
+
+    //   return jsDay === 0 ? 6 : jsDay - 1;
+    // }
+
+    // function toDateString(date) {
+    //   const year = date.getFullYear();
+    //   const month = String(date.getMonth() + 1).padStart(2, '0');
+    //   const day = String(date.getDate()).padStart(2, '0');
+
+    //   return `${year}-${month}-${day}`;
+    // }
+
+    // function normalizeDate(dateValue) {
+    //   if (!dateValue) return '';
+    //   return String(dateValue).slice(0, 10);
+    // }
+
+    // function timeForInput(timeValue) {
+    //   if (!timeValue) return '';
+    //   return String(timeValue).slice(0, 5);
+    // }
+
+    // function formatDateLabel(dateValue) {
+    //   if (!dateValue) return '-';
+
+    //   const [year, month, day] = String(dateValue).slice(0, 10).split('-');
+
+    //   if (!year || !month || !day) return dateValue;
+
+    //   return `${day}/${month}/${year}`;
+    // }
+
+    // function formatClassType(value) {
+    //   if (value === 'trial') return 'Trial';
+    //   return 'Reguler';
+    // }
 
     function escapeHtml(value) {
       return String(value)

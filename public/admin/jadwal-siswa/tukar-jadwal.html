@@ -45,43 +45,41 @@
           <input type="text" id="sisa-kredit" name="sisa-kredit" value="Auto" disabled />
         </div>
 
-<!-- Jadwal Lama -->
-<div class="form-group jadwal-lama-tukar">
-  <h4>Jadwal Lama</h4>
+        <div class="form-group jadwal-lama-tukar">
+          <h4>Jadwal Lama</h4>
 
-  <div class="days">
-    <div class="day-block-lama" id="old-day">
-      <label for="original-date">Tanggal</label>
-      <input type="date" id="original-date" />
+          <div class="days">
+            <div class="day-block-lama" id="old-day">
+              <label for="original-date">Tanggal</label>
+              <input type="date" id="original-date" />
 
-      <label for="old-time">Jam</label>
-      <div class="time-row">
-        <input type="text" id="old-time" value="Auto" readonly />
-        <span>WIB</span>
-      </div>
-    </div>
-  </div>
-</div>
+              <label for="old-time">Jam</label>
+              <div class="time-row">
+                <input type="text" id="old-time" value="Auto" readonly />
+                <span>WIB</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-<!-- Jadwal Baru -->
-<div class="form-group jadwal-baru-tukar">
-  <h4>Jadwal Baru</h4>
+        <div class="form-group jadwal-baru-tukar">
+          <h4>Jadwal Baru</h4>
 
-  <div class="days">
-    <div class="day-block" id="new-day">
-      <label for="new-date">Tanggal</label>
-      <input type="date" id="new-date" />
+          <div class="days">
+            <div class="day-block" id="new-day">
+              <label for="new-date">Tanggal</label>
+              <input type="date" id="new-date" />
 
-      <label for="new-start-time">Jam</label>
-      <div class="time-row">
-        <input type="time" id="new-start-time" class="start-time" />
-        <span>WIB</span>
-      </div>
+              <label for="new-start-time">Jam</label>
+              <div class="time-row">
+                <input type="time" id="new-start-time" class="start-time" />
+                <span>WIB</span>
+              </div>
 
-      <input type="hidden" id="new-end-time" />
-    </div>
-  </div>
-</div>
+              <input type="hidden" id="new-end-time" />
+            </div>
+          </div>
+        </div>
 
         <div class="validation">
           <button type="button" class="btn-option" onclick="window.location.href='pengaturan-jadwal.html'">
@@ -98,7 +96,6 @@
 
   <script>
     let scheduleContext = null;
-    let currentSchedules = [];
     let selectedSchedule = null;
 
     document.addEventListener('DOMContentLoaded', async function () {
@@ -116,7 +113,6 @@
       }
 
       await loadScheduleContextDetail();
-      await loadRoutineSchedules();
 
       originalDateInput.addEventListener('change', handleOriginalDateChange);
 
@@ -147,9 +143,8 @@
       return value === 'trial' ? 'Trial' : 'Reguler';
     }
 
-    function getDayName(day) {
-      const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-      return dayNames[Number(day)] || '-';
+    function normalizeClassType(value) {
+      return value === 'trial' ? 'trial' : 'reguler';
     }
 
     function normalizeTime(timeValue) {
@@ -162,6 +157,11 @@
       return String(timeValue).slice(0, 5);
     }
 
+    function normalizeDate(dateValue) {
+      if (!dateValue) return '';
+      return String(dateValue).slice(0, 10);
+    }
+
     function addOneHour(timeValue) {
       if (!timeValue) return '';
 
@@ -171,7 +171,6 @@
       date.setHours(hour);
       date.setMinutes(minute);
       date.setSeconds(0);
-
       date.setHours(date.getHours() + 1);
 
       const endHour = String(date.getHours()).padStart(2, '0');
@@ -185,10 +184,37 @@
 
       const [year, month, day] = dateString.split('-').map(Number);
       const date = new Date(year, month - 1, day);
-
       const jsDay = date.getDay();
 
       return jsDay === 0 ? 6 : jsDay - 1;
+    }
+
+    function getMondayOfWeek(dateString) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+
+      const jsDay = date.getDay();
+      const diff = jsDay === 0 ? -6 : 1 - jsDay;
+
+      date.setDate(date.getDate() + diff);
+
+      const resultYear = date.getFullYear();
+      const resultMonth = String(date.getMonth() + 1).padStart(2, '0');
+      const resultDay = String(date.getDate()).padStart(2, '0');
+
+      return `${resultYear}-${resultMonth}-${resultDay}`;
+    }
+
+    function isExceptionSchedule(schedule) {
+      if (!schedule) return false;
+
+      if (schedule.source === 'exception') return true;
+      if (schedule.exception_id) return true;
+
+      const date = normalizeDate(schedule.date || schedule.class_date || schedule.new_date);
+      const originalDate = normalizeDate(schedule.original_date);
+
+      return !!originalDate && !!date && originalDate !== date;
     }
 
     async function loadScheduleContextDetail() {
@@ -259,9 +285,11 @@
       }
     }
 
-    async function loadRoutineSchedules() {
+    async function loadSchedulesForSelectedWeek(selectedDate) {
       try {
-        const response = await fetch('/api/schedules', {
+        const weekStart = getMondayOfWeek(selectedDate);
+
+        const response = await fetch(`/api/schedules/week?week_start=${weekStart}`, {
           headers: {
             Authorization: `Bearer ${getToken()}`
           }
@@ -269,78 +297,92 @@
 
         const result = await response.json();
 
-if (!response.ok) {
-  console.error('SWAP ERROR RESULT:', result);
-  alert(result.error || result.message || 'Gagal menukar jadwal.');
-  return;
-}
-
-        currentSchedules = result.filter(schedule => {
-          return Number(schedule.student_id) === Number(scheduleContext.student_id)
-            && Number(schedule.level_id) === Number(scheduleContext.level_id)
-            && Number(schedule.mentor_id) === Number(scheduleContext.mentor_id)
-            && schedule.class_type === scheduleContext.class_type;
-        });
-
-        if (currentSchedules.length === 0) {
-          alert('Belum ada jadwal rutin untuk siswa, level, mentor, dan jenis kelas ini.');
+        if (!response.ok) {
+          console.error('LOAD WEEKLY SCHEDULES ERROR:', result);
+          alert(result.error || result.message || 'Gagal mengambil jadwal mingguan.');
+          return [];
         }
+
+        const schedules = Array.isArray(result) ? result : [];
+
+        return schedules.filter(schedule => {
+          const sameStudent = Number(schedule.student_id) === Number(scheduleContext.student_id);
+          const sameLevel = Number(schedule.level_id) === Number(scheduleContext.level_id);
+          const sameMentor = Number(schedule.mentor_id) === Number(scheduleContext.mentor_id);
+          const sameClassType = normalizeClassType(schedule.class_type) === normalizeClassType(scheduleContext.class_type);
+          const isActive = !schedule.status || schedule.status === 'active';
+
+          return sameStudent && sameLevel && sameMentor && sameClassType && isActive;
+        });
       } catch (error) {
-        console.error('LOAD ROUTINE SCHEDULES ERROR:', error);
-        alert('Terjadi kesalahan saat mengambil data jadwal rutin.');
+        console.error('LOAD SCHEDULES FOR WEEK ERROR:', error);
+        alert('Terjadi kesalahan saat mengambil jadwal mingguan.');
+        return [];
       }
     }
 
-    function handleOriginalDateChange() {
-      const originalDate = document.getElementById('original-date').value;
+    async function handleOriginalDateChange() {
+      const originalDateInput = document.getElementById('original-date');
       const oldTimeInput = document.getElementById('old-time');
+
+      const selectedDate = originalDateInput.value;
 
       oldTimeInput.value = 'Auto';
       selectedSchedule = null;
+      document.getElementById('class-type-name').value = formatClassType(scheduleContext.class_type);
 
-      if (!originalDate) return;
+      if (!selectedDate) return;
 
-      const originalDateDay = getDayOfWeekMondayBased(originalDate);
+      const selectedDay = getDayOfWeekMondayBased(selectedDate);
 
-      if (originalDateDay === 6) {
+      if (selectedDay === 6) {
         alert('Tanggal lama tidak boleh hari Minggu.');
-        document.getElementById('original-date').value = '';
+        originalDateInput.value = '';
         return;
       }
 
-      const matchedSchedules = currentSchedules.filter(schedule => {
-        return Number(schedule.day_of_week) === Number(originalDateDay);
+      const schedulesInWeek = await loadSchedulesForSelectedWeek(selectedDate);
+
+      const matchedSchedules = schedulesInWeek.filter(schedule => {
+        const scheduleDate = normalizeDate(schedule.date || schedule.class_date || schedule.new_date || schedule.original_date);
+        return scheduleDate === selectedDate;
       });
 
       if (matchedSchedules.length === 0) {
-        alert(`Tidak ada jadwal rutin pada hari ${getDayName(originalDateDay)} untuk data yang dipilih.`);
-        document.getElementById('original-date').value = '';
+        alert('Tidak ada jadwal kelas pada tanggal tersebut untuk data yang dipilih.');
+        originalDateInput.value = '';
         return;
       }
 
       if (matchedSchedules.length > 1) {
-        alert('Ada lebih dari satu jadwal rutin pada tanggal tersebut. Untuk sementara pilih data jadwal yang lebih spesifik dari pengaturan jadwal.');
-        document.getElementById('original-date').value = '';
+        alert('Ada lebih dari satu jadwal pada tanggal tersebut. Untuk sementara pilih tanggal yang hanya memiliki satu jadwal.');
+        originalDateInput.value = '';
         return;
       }
 
       selectedSchedule = matchedSchedules[0];
 
-      oldTimeInput.value = `${timeForInput(selectedSchedule.start_time)} - ${timeForInput(selectedSchedule.end_time)}`;
+      oldTimeInput.value =
+        `${timeForInput(selectedSchedule.start_time)} - ${timeForInput(selectedSchedule.end_time)}`;
+
+      document.getElementById('class-type-name').value =
+        formatClassType(selectedSchedule.class_type);
+
+      console.log('SELECTED OLD SCHEDULE ADMIN:', selectedSchedule);
     }
 
     async function submitSwapSchedule() {
-      const originalDate = document.getElementById('original-date').value;
+      const originalDateInputValue = document.getElementById('original-date').value;
       const newDate = document.getElementById('new-date').value;
       const newStartTime = normalizeTime(document.getElementById('new-start-time').value);
       const newEndTime = normalizeTime(document.getElementById('new-end-time').value);
 
       if (!selectedSchedule) {
-        alert('Pilih tanggal jadwal lama yang sesuai dengan jadwal rutin terlebih dahulu.');
+        alert('Pilih tanggal jadwal lama yang sesuai terlebih dahulu.');
         return;
       }
 
-      if (!originalDate || !newDate || !newStartTime || !newEndTime) {
+      if (!originalDateInputValue || !newDate || !newStartTime || !newEndTime) {
         alert('Tanggal lama, tanggal baru, dan jam baru wajib diisi.');
         return;
       }
@@ -357,6 +399,26 @@ if (!response.ok) {
         return;
       }
 
+      const routineScheduleId =
+        selectedSchedule.routine_schedule_id ||
+        selectedSchedule.routine_id ||
+        selectedSchedule.id;
+
+      const originalDateForApi =
+        isExceptionSchedule(selectedSchedule)
+          ? normalizeDate(selectedSchedule.original_date)
+          : normalizeDate(selectedSchedule.date || originalDateInputValue);
+
+      if (!routineScheduleId || !originalDateForApi) {
+        alert('Data jadwal lama tidak lengkap. Silakan pilih ulang tanggal lama.');
+        console.error('INVALID SELECTED SCHEDULE ADMIN:', selectedSchedule);
+        return;
+      }
+
+      const confirmed = confirm('Yakin ingin menukar jadwal ini?');
+
+      if (!confirmed) return;
+
       try {
         const response = await fetch('/api/schedules/swap', {
           method: 'POST',
@@ -365,8 +427,8 @@ if (!response.ok) {
             Authorization: `Bearer ${getToken()}`
           },
           body: JSON.stringify({
-            routine_schedule_id: Number(selectedSchedule.id),
-            original_date: originalDate,
+            routine_schedule_id: Number(routineScheduleId),
+            original_date: originalDateForApi,
             new_date: newDate,
             new_start_time: newStartTime,
             new_end_time: newEndTime
@@ -376,11 +438,12 @@ if (!response.ok) {
         const result = await response.json();
 
         if (!response.ok) {
-          alert(result.message || 'Gagal menukar jadwal.');
+          console.error('SWAP SCHEDULE ERROR RESULT ADMIN:', result);
+          alert(result.error || result.message || 'Gagal menukar jadwal.');
           return;
         }
 
-        alert('Tukar jadwal berhasil disimpan.');
+        alert(result.message || 'Tukar jadwal berhasil disimpan.');
         localStorage.removeItem('scheduleContext');
         window.location.href = '/admin/jadwal-siswa/jadwal-siswa.html';
       } catch (error) {
@@ -389,6 +452,7 @@ if (!response.ok) {
       }
     }
   </script>
+
   <script src="/assets/js/auth-guard.js"></script>
   <script src="../../assets/js/sidebar.js"></script>
 </body>
